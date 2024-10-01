@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <service id="magedia_demharter.import_products" class="MagediaDemharter\Service\ImportProducts">
+        </service>
+        <service
+            id="magedia_demharter.commands.import_command"
+            class="MagediaDemharter\Commands\ImportCommand">
+            <tag name="console.command" command="demharter:import"/>
+            <argument type="service" id="magedia_demharter.import_products"/>
+        </service>
+
+        <service id="magedia_demharter.create_products" class="MagediaDemharter\Service\CreateProducts">
+        </service>
+        <service
+            id="magedia_demharter.commands.create_command"
+            class="MagediaDemharter\Commands\CreateCommand">
+            <tag name="console.command" command="demharter:create"/>
+            <argument type="service" id="magedia_demharter.create_products"/>
+        </service>
+
+        <service id="magedia_demharter.create_tech_parts" class="MagediaDemharter\Service\CreateTechParts">
+        </service>
+        <service
+                id="magedia_demharter.commands.create_tech_parts_command"
+                class="MagediaDemharter\Commands\CreateTechPartsCommand">
+            <tag name="console.command" command="demharter:create_tech_parts"/>
+            <argument type="service" id="magedia_demharter.create_tech_parts"/>
+        </service>
+
+        <service
+                id="magedia_demharter.commands.update_qty_command"
+                class="MagediaDemharter\Commands\UpdateQtyCommand">
+            <tag name="console.command" command="demharter:update_qty"/>
+            <argument type="service" id="magedia_demharter.create_products"/>
+        </service>
+
+        <service id="magedia_demharter.delete_products" class="MagediaDemharter\Service\DeleteProducts">
+        </service>
+        <service id="magedia_demharter.commands.delete_products_command" class="MagediaDemharter\Commands\DeleteProductsCommand">
+            <tag name="console.command" command="demharter:delete_products"/>
+            <argument type="service" id="magedia_demharter.delete_products"/>
+        </service>
+
+        <service id="magedia_demharter.delete_categories_and_products" class="MagediaDemharter\Service\DeleteCategoriesAndProducts">
+        </service>
+        <service id="magedia_demharter.commands.delete_categories_and_products_command" class="MagediaDemharter\Commands\DeleteCategoriesAndProductsCommand">
+            <tag name="console.command" command="demharter:delete_categories_and_products"/>
+            <argument type="service" id="magedia_demharter.delete_categories_and_products"/>
+        </service>
+    </services>
+</container>
