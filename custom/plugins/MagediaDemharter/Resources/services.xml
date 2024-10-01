@@ -19,6 +19,13 @@
             <argument type="service" id="magedia_demharter.delete_products_service"/>
         </service>
 
+        <service id="magedia_demharter.create_manufacturers_service" class="MagediaDemharter\Service\CreateManufacturersService">
+        </service>
+        <service id="magedia_demharter.commands.create_manufacturers_command" class="MagediaDemharter\Commands\CreateManufacturersCommand">
+            <tag name="console.command" command="demharter:create_manufacturers"/>
+            <argument type="service" id="magedia_demharter.create_manufacturers_service"/>
+        </service>
+
         <service id="magedia_demharter.import_products" class="MagediaDemharter\Service\ImportProducts">
         </service>
         <service

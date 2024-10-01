@@ -91,7 +91,7 @@ class DeleteProductsService
             $this->deleteProducts($productIds);
         }
 
-        echo "Deleting completed\n";
+        echo "Deleting products completed\n";
     }
 
     function deleteProducts(array $productIds)
