@@ -5,6 +5,13 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <service id="magedia_demharter.delete_products_service" class="MagediaDemharter\Service\DeleteProductsService">
+        </service>
+        <service id="magedia_demharter.commands.delete_products_command" class="MagediaDemharter\Commands\DeleteProductsCommand">
+            <tag name="console.command" command="demharter:delete_products"/>
+            <argument type="service" id="magedia_demharter.delete_products_service"/>
+        </service>
+
         <service id="magedia_demharter.import_products" class="MagediaDemharter\Service\ImportProducts">
         </service>
         <service
@@ -37,13 +44,6 @@
                 class="MagediaDemharter\Commands\UpdateQtyCommand">
             <tag name="console.command" command="demharter:update_qty"/>
             <argument type="service" id="magedia_demharter.create_products"/>
-        </service>
-
-        <service id="magedia_demharter.delete_products" class="MagediaDemharter\Service\DeleteProducts">
-        </service>
-        <service id="magedia_demharter.commands.delete_products_command" class="MagediaDemharter\Commands\DeleteProductsCommand">
-            <tag name="console.command" command="demharter:delete_products"/>
-            <argument type="service" id="magedia_demharter.delete_products"/>
         </service>
 
         <service id="magedia_demharter.delete_categories_and_products" class="MagediaDemharter\Service\DeleteCategoriesAndProducts">
