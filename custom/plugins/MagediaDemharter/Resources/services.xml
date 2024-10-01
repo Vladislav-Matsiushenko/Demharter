@@ -5,6 +5,13 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <service id="magedia_demharter.download_csv_files_service" class="MagediaDemharter\Service\DownloadCsvFilesService">
+        </service>
+        <service id="magedia_demharter.commands.download_csv_files_command" class="MagediaDemharter\Commands\DownloadCsvFilesCommand">
+            <tag name="console.command" command="demharter:download_csv_files"/>
+            <argument type="service" id="magedia_demharter.download_csv_files_service"/>
+        </service>
+
         <service id="magedia_demharter.delete_products_service" class="MagediaDemharter\Service\DeleteProductsService">
         </service>
         <service id="magedia_demharter.commands.delete_products_command" class="MagediaDemharter\Commands\DeleteProductsCommand">
