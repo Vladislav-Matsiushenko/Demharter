@@ -26,6 +26,13 @@
             <argument type="service" id="magedia_demharter.create_manufacturers_service"/>
         </service>
 
+        <service id="magedia_demharter.create_categories_service" class="MagediaDemharter\Service\CreateCategoriesService">
+        </service>
+        <service id="magedia_demharter.commands.create_categories_command" class="MagediaDemharter\Commands\CreateCategoriesCommand">
+            <tag name="console.command" command="demharter:create_categories"/>
+            <argument type="service" id="magedia_demharter.create_categories_service"/>
+        </service>
+
         <service id="magedia_demharter.import_products" class="MagediaDemharter\Service\ImportProducts">
         </service>
         <service
