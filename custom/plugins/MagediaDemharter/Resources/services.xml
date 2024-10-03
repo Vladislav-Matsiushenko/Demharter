@@ -33,6 +33,13 @@
             <argument type="service" id="magedia_demharter.create_categories_service"/>
         </service>
 
+        <service id="magedia_demharter.create_products_service" class="MagediaDemharter\Service\CreateProductsService">
+        </service>
+        <service id="magedia_demharter.commands.create_products_command" class="MagediaDemharter\Commands\CreateProductsCommand">
+            <tag name="console.command" command="demharter:create_products"/>
+            <argument type="service" id="magedia_demharter.create_products_service"/>
+        </service>
+
         <service id="magedia_demharter.import_products" class="MagediaDemharter\Service\ImportProducts">
         </service>
         <service
@@ -40,15 +47,6 @@
             class="MagediaDemharter\Commands\ImportCommand">
             <tag name="console.command" command="demharter:import"/>
             <argument type="service" id="magedia_demharter.import_products"/>
-        </service>
-
-        <service id="magedia_demharter.create_products" class="MagediaDemharter\Service\CreateProducts">
-        </service>
-        <service
-            id="magedia_demharter.commands.create_command"
-            class="MagediaDemharter\Commands\CreateCommand">
-            <tag name="console.command" command="demharter:create"/>
-            <argument type="service" id="magedia_demharter.create_products"/>
         </service>
 
         <service id="magedia_demharter.create_tech_parts" class="MagediaDemharter\Service\CreateTechParts">

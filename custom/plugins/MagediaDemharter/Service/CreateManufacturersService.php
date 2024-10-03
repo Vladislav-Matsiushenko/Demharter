@@ -52,6 +52,7 @@ class CreateManufacturersService
 
         if(curl_errno($ch)) {
             echo 'Curl error: ' . curl_error($ch);
+            curl_close($ch);
 
             return;
         }

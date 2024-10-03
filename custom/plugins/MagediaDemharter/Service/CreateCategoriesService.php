@@ -5,14 +5,17 @@ namespace MagediaDemharter\Service;
 class CreateCategoriesService
 {
 // Local
+    private $logFilePath = '/var/www/quad-ersatzteile.loc/NotCreatedCategories.txt';
     private $csvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
+//    private $logFilePath = '/usr/home/mipzhm/public_html/staging/NotCreatedCategories.txt';
 //    private $csvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
+//    private $logFilePath = '/usr/home/mipzhm/public_html/NotCreatedCategories.txt';
 //    private $csvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $categoryName = 'Quad/Scooter spare parts';
@@ -30,14 +33,34 @@ class CreateCategoriesService
 
     public function execute()
     {
+        file_put_contents($this->logFilePath, '');
+
         $categoriesData = [];
         $csvFile = fopen($this->csvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
-            if ($rowData['products_category_tree'] != '' && $rowData['products_category_tree'] != "Artikel noch nicht zugewiesen") {
-                $categoriesData[] =  $this->categoryName . ' => ' . $rowData['products_category_tree'];
+            if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
+                $logMessage = 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
+                echo $logMessage;
+                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                continue;
             }
+
+            if (strlen($rowData['external_id']) < 4){
+                $logMessage = 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
+                echo $logMessage;
+                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                continue;
+            }
+
+            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
+                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
+                    $rowData['external_id'][$i] = '_';
+                }
+            }
+
+            $categoriesData[] =  $this->categoryName . ' => ' . $rowData['products_category_tree'];
         }
         fclose($csvFile);
         $categoriesData = array_unique($categoriesData);
@@ -53,6 +76,7 @@ class CreateCategoriesService
 
         if(curl_errno($ch)) {
             echo 'Curl error: ' . curl_error($ch);
+            curl_close($ch);
 
             return;
         }
@@ -97,16 +121,17 @@ class CreateCategoriesService
 
                 curl_close($ch);
 
-                $createdCategoriesCount++;
-                if ($createdCategoriesCount % 100 == 0) {
-                    echo 'Created ' . $createdCategoriesCount . ' categories. ' . ($categoriesCount - $createdCategoriesCount) . " left\n";
-                }
-
                 $newCategoryId = json_decode($response)->data->id;
-                $categories[] = (Object)['id' => $newCategoryId, 'name' => $names[$i], 'parentId' => $categoryId];
-                $categoryId = $newCategoryId;
+                if ($newCategoryId) {
+                    $categories[] = (Object)['id' => $newCategoryId, 'name' => $names[$i], 'parentId' => $categoryId];
+                    $categoryId = $newCategoryId;
+                    $subCategoriesCount = $i + 1;
+                }
+            }
 
-                $subCategoriesCount = $i + 1;
+            $createdCategoriesCount++;
+            if ($createdCategoriesCount % 100 == 0) {
+                echo 'Created ' . $createdCategoriesCount . ' categories. ' . ($categoriesCount - $createdCategoriesCount) . " left\n";
             }
         }
 
