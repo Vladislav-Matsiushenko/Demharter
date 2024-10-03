@@ -58,13 +58,6 @@
             <argument type="service" id="magedia_demharter.create_tech_parts"/>
         </service>
 
-        <service
-                id="magedia_demharter.commands.update_qty_command"
-                class="MagediaDemharter\Commands\UpdateQtyCommand">
-            <tag name="console.command" command="demharter:update_qty"/>
-            <argument type="service" id="magedia_demharter.create_products"/>
-        </service>
-
         <service id="magedia_demharter.delete_categories_and_products" class="MagediaDemharter\Service\DeleteCategoriesAndProducts">
         </service>
         <service id="magedia_demharter.commands.delete_categories_and_products_command" class="MagediaDemharter\Commands\DeleteCategoriesAndProductsCommand">

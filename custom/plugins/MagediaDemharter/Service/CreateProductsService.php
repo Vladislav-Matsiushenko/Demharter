@@ -91,7 +91,7 @@ class CreateProductsService
         $this->ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers?limit=50000');
+        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers?limit=30000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, "$this->userName:$this->apiKey");
@@ -110,7 +110,7 @@ class CreateProductsService
         $manufacturers = json_decode($response)->data;
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=50000');
+        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=30000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, "$this->userName:$this->apiKey");
@@ -174,9 +174,7 @@ class CreateProductsService
             $categoryTree = implode(' => ', $categoryTree);
 
             $categoryId = array_search($categoryTree, $categoriesTrees);
-            if ($categoryId !== false) {
-                $productCategories[$categoryData['external_id']][]['id'] = $categoryId;
-            }
+            $productCategories[$categoryData['external_id']][]['id'] = $categoryId;
         }
 
         $productsCount = count($productsData);
