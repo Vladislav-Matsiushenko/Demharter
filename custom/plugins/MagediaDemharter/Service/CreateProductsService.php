@@ -41,15 +41,14 @@ class CreateProductsService
     public function execute()
     {
         file_put_contents($this->logFilePath, '');
-        $charactersForSku = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $charactersForSkuLength = strlen($charactersForSku);
 
         $productsData = [];
+        $categoriesData = [];
         $csvFile = fopen($this->productsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
-            if (!$rowData['products_name']){
+            if (!$rowData['products_name']) {
                 $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name!\n";
                 echo $logMessage;
                 file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
@@ -63,15 +62,14 @@ class CreateProductsService
                 continue;
             }
 
-            if (strlen($rowData['external_id']) < 4){
-                $rowData['external_id'] = 'dataparts-';
-                for ($i = 0; $i < 6; $i++){
-                    $rowData['external_id'] .= $charactersForSku[random_int(0, $charactersForSkuLength - 1)];
-                }
-                $rowData['external_id'] .= '-' . $rowData['products_id'];
+            if (strlen($rowData['external_id']) < 4) {
+                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
+                echo $logMessage;
+                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                continue;
             }
 
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
+            for ($i = 0; $i < strlen($rowData['external_id']); $i++) {
                 if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
                     $rowData['external_id'][$i] = '_';
                 }
@@ -85,16 +83,17 @@ class CreateProductsService
             }
 
             $productsData[] = $rowData;
+            $categoriesData[] =  $rowData;
         }
         fclose($csvFile);
 
         $this->ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers?limit=30000');
+        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers?limit=50000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, "$this->userName:$this->apiKey");
+        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
         $response = curl_exec($ch);
@@ -110,10 +109,10 @@ class CreateProductsService
         $manufacturers = json_decode($response)->data;
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=30000');
+        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=50000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, "$this->userName:$this->apiKey");
+        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
         $response = curl_exec($ch);
@@ -138,7 +137,6 @@ class CreateProductsService
 
         $categoriesTrees = $this->buildCategoriesTrees($categories, $mainCategoryId, []);
 
-        $categoriesData = [];
         $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {

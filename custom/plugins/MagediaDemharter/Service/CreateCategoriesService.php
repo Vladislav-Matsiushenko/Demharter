@@ -6,17 +6,20 @@ class CreateCategoriesService
 {
 // Local
     private $logFilePath = '/var/www/quad-ersatzteile.loc/NotCreatedCategories.txt';
-    private $csvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
+    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
+    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
 //    private $logFilePath = '/usr/home/mipzhm/public_html/staging/NotCreatedCategories.txt';
-//    private $csvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
 //    private $logFilePath = '/usr/home/mipzhm/public_html/NotCreatedCategories.txt';
-//    private $csvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $categoryName = 'Quad/Scooter spare parts';
     private $userName = 'schwab';
@@ -36,7 +39,42 @@ class CreateCategoriesService
         file_put_contents($this->logFilePath, '');
 
         $categoriesData = [];
-        $csvFile = fopen($this->csvFilePath, 'r');
+        $csvFile = fopen($this->productsDataCsvFilePath, 'r');
+        $headers = fgetcsv($csvFile, 0, ';');
+        while ($row = fgetcsv($csvFile, 0, ';')) {
+            $rowData = array_combine($headers, $row);
+            if (!$rowData['products_name']){
+                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name!\n";
+                echo $logMessage;
+                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                continue;
+            }
+
+            if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
+                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
+                echo $logMessage;
+                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                continue;
+            }
+
+            if (strlen($rowData['external_id']) < 4){
+                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
+                echo $logMessage;
+                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                continue;
+            }
+
+            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
+                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
+                    $rowData['external_id'][$i] = '_';
+                }
+            }
+
+            $categoriesData[] =  $this->categoryName . ' => ' . $rowData['products_category_tree'];
+        }
+        fclose($csvFile);
+
+        $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
@@ -69,7 +107,7 @@ class CreateCategoriesService
         curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=50000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, "$this->userName:$this->apiKey");
+        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
         $response = curl_exec($ch);
