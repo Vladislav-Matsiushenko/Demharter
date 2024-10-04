@@ -5,15 +5,15 @@ namespace MagediaDemharter\Service;
 class CreateManufacturersService
 {
 // Local
-    private $csvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
+    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
-//    private $csvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
-//    private $csvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
@@ -30,7 +30,7 @@ class CreateManufacturersService
     public function execute()
     {
         $manufacturersData = [];
-        $csvFile = fopen($this->csvFilePath, 'r');
+        $csvFile = fopen($this->productsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
@@ -45,7 +45,7 @@ class CreateManufacturersService
         curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers?limit=50000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, "$this->userName:$this->apiKey");
+        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
         $response = curl_exec($ch);

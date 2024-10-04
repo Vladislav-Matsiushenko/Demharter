@@ -40,23 +40,13 @@
             <argument type="service" id="magedia_demharter.create_products_service"/>
         </service>
 
-        <service id="magedia_demharter.import_products" class="MagediaDemharter\Service\ImportProducts">
+        <service id="magedia_demharter.create_tech_parts_service" class="MagediaDemharter\Service\CreateTechPartsService">
         </service>
-        <service
-            id="magedia_demharter.commands.import_command"
-            class="MagediaDemharter\Commands\ImportCommand">
-            <tag name="console.command" command="demharter:import"/>
-            <argument type="service" id="magedia_demharter.import_products"/>
+        <service id="magedia_demharter.commands.create_tech_parts_command" class="MagediaDemharter\Commands\CreateTechPartsCommand">
+            <tag name="console.command" command="demharter:create_tech_parts"/>
+            <argument type="service" id="magedia_demharter.create_tech_parts_service"/>
         </service>
 
-        <service id="magedia_demharter.create_tech_parts" class="MagediaDemharter\Service\CreateTechParts">
-        </service>
-        <service
-                id="magedia_demharter.commands.create_tech_parts_command"
-                class="MagediaDemharter\Commands\CreateTechPartsCommand">
-            <tag name="console.command" command="demharter:create_tech_parts"/>
-            <argument type="service" id="magedia_demharter.create_tech_parts"/>
-        </service>
 
         <service id="magedia_demharter.delete_categories_and_products" class="MagediaDemharter\Service\DeleteCategoriesAndProducts">
         </service>

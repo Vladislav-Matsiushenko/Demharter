@@ -44,7 +44,7 @@ class CreateCategoriesService
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if (!$rowData['products_name']){
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name!\n";
+                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
                 echo $logMessage;
                 file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
                 continue;

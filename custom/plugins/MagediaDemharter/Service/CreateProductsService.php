@@ -49,7 +49,7 @@ class CreateProductsService
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if (!$rowData['products_name']) {
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name!\n";
+                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
                 echo $logMessage;
                 file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
                 continue;
@@ -76,7 +76,7 @@ class CreateProductsService
             }
 
             if ($this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']])) {
-                $logMessage = 'Product with ID = '.$rowData['products_id']." in not unique!\n";
+                $logMessage = 'Product with ID = '.$rowData['products_id'] . " already exists\n";
                 echo $logMessage;
                 file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
                 continue;
@@ -172,18 +172,27 @@ class CreateProductsService
             $categoryTree = implode(' => ', $categoryTree);
 
             $categoryId = array_search($categoryTree, $categoriesTrees);
-            $productCategories[$categoryData['external_id']][]['id'] = $categoryId;
+            if ($categoryId !== false) {
+                $productCategories[$categoryData['external_id']][]['id'] = $categoryId;
+            }
         }
 
         $productsCount = count($productsData);
         $createdProductsCount = 0;
         foreach($productsData as $product) {
-            $supplierId = 0;
+            $manufacturerId = 0;
             foreach ($manufacturers as $manufacturer) {
                 if ($product['cat_manufacturer'] == $manufacturer->name){
-                    $supplierId = $manufacturer->id;
+                    $manufacturerId = $manufacturer->id;
                     break;
                 }
+            }
+
+            if ($manufacturerId == 0 || empty($productCategories[$product['external_id']])) {
+                $logMessage = 'Product with External ID = ' . $product['external_id'] . " has wrong manufacturer or category\n";
+                echo $logMessage;
+                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                continue;
             }
 
             if ($product['products_image_1']){
@@ -213,7 +222,7 @@ class CreateProductsService
                 'name' => $product['products_name'],
                 'taxId' => $product['products_tax_class_id'],
                 'tax' => $product['products_tax_percent'],
-                'supplierId' => $supplierId,
+                'supplierId' => $manufacturerId,
                 'descriptionLong' => $product['products_description'],
                 'active' => true,
                 'categories' => $productCategories[$product['external_id']],
@@ -242,7 +251,7 @@ class CreateProductsService
             if (curl_errno($ch)) {
                 echo 'Error: ' . curl_error($ch);
             } elseif (!json_decode($response)) {
-                $logMessage = 'Product with ID = ' . $product['products_id'] . '; External ID = ' . $product['external_id'] . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created!\n";
+                $logMessage = 'Product with ID = ' . $product['products_id'] . '; External ID = ' . $product['external_id'] . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
                 echo $logMessage;
                 file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
             } else {
