@@ -188,7 +188,7 @@ class CreateProductsService
                 }
             }
 
-            if ($manufacturerId == 0 || empty($productCategories[$product['external_id']])) {
+            if ($manufacturerId == 0 || !isset($productCategories[$product['external_id']])) {
                 $logMessage = 'Product with External ID = ' . $product['external_id'] . " has wrong manufacturer or category\n";
                 echo $logMessage;
                 file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
