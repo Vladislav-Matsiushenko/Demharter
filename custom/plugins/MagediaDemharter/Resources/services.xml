@@ -54,12 +54,11 @@
             <argument type="service" id="magedia_demharter.update_products_quantity_service"/>
         </service>
 
-
-        <service id="magedia_demharter.delete_categories_and_products" class="MagediaDemharter\Service\DeleteCategoriesAndProducts">
+        <service id="magedia_demharter.delete_tech_parts_products_categories_service" class="MagediaDemharter\Service\DeleteTechPartsProductsCategoriesService">
         </service>
-        <service id="magedia_demharter.commands.delete_categories_and_products_command" class="MagediaDemharter\Commands\DeleteCategoriesAndProductsCommand">
-            <tag name="console.command" command="demharter:delete_categories_and_products"/>
-            <argument type="service" id="magedia_demharter.delete_categories_and_products"/>
+        <service id="magedia_demharter.commands.delete_tech_parts_products_categories_command" class="MagediaDemharter\Commands\DeleteTechPartsProductsCategoriesCommand">
+            <tag name="console.command" command="demharter:delete_tech_parts_products_categories"/>
+            <argument type="service" id="magedia_demharter.delete_tech_parts_products_categories_service"/>
         </service>
     </services>
 </container>
