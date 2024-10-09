@@ -40,6 +40,13 @@
             <argument type="service" id="magedia_demharter.create_products_service"/>
         </service>
 
+        <service id="magedia_demharter.download_tech_parts_images_service" class="MagediaDemharter\Service\DownloadTechPartsImagesService">
+        </service>
+        <service id="magedia_demharter.commands.download_tech_parts_images_command" class="MagediaDemharter\Commands\DownloadTechPartsImagesCommand">
+            <tag name="console.command" command="demharter:download_tech_parts_images"/>
+            <argument type="service" id="magedia_demharter.download_tech_parts_images_service"/>
+        </service>
+
         <service id="magedia_demharter.create_tech_parts_service" class="MagediaDemharter\Service\CreateTechPartsService">
         </service>
         <service id="magedia_demharter.commands.create_tech_parts_command" class="MagediaDemharter\Commands\CreateTechPartsCommand">
