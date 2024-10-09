@@ -18,7 +18,7 @@ class DownloadCsvFilesService
     private $productsDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/b06c2426688d447a44d22e6c13e1ed6e_file/Teileexport-grp-3.csv';
     private $techPartsDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/e1d6bb2bf5293105f019865e9904d969_file/cat_data.csv';
 
-    public function execute()
+    public function execute($filesNumber = null)
     {
         $startTime = microtime(true);
 
@@ -32,14 +32,16 @@ class DownloadCsvFilesService
             echo "Error while downloading ProductsData file\n";
         }
 
-        if (file_exists($this->techPartsDataCsvFilePath)) {
-            unlink($this->techPartsDataCsvFilePath);
-        }
-        $fileContent = file_get_contents($this->techPartsDataCsvFileUrl);
-        if ($fileContent !== false && file_put_contents($this->techPartsDataCsvFilePath, $fileContent) !== false) {
-            echo "TechPartsData file was successfully downloaded\n";
-        } else {
-            echo "Error while downloading TechPartsData file\n";
+        if ($filesNumber != 1) {
+            if (file_exists($this->techPartsDataCsvFilePath)) {
+                unlink($this->techPartsDataCsvFilePath);
+            }
+            $fileContent = file_get_contents($this->techPartsDataCsvFileUrl);
+            if ($fileContent !== false && file_put_contents($this->techPartsDataCsvFilePath, $fileContent) !== false) {
+                echo "TechPartsData file was successfully downloaded\n";
+            } else {
+                echo "Error while downloading TechPartsData file\n";
+            }
         }
 
         $executionTime = (microtime(true) - $startTime);
