@@ -5,19 +5,16 @@ namespace MagediaDemharter\Service;
 class DownloadTechPartsImagesService
 {
 // Local
-    private $logFilePath = '/var/www/quad-ersatzteile.loc/NotCreatedTechParts.txt';
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $imagesFilePath = '/var/www/quad-ersatzteile.loc/media/image/pkExplosionChart/';
     private $techPartsDataJsonFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.txt';
 
 // Staging
-//    private $logFilePath = '/usr/home/mipzhm/public_html/staging/NotCreatedTechParts.txt';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/staging/media/image/pkExplosionChart/';
 //    private $techPartsDataJsonFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.txt';
 
 // Live
-//    private $logFilePath = '/usr/home/mipzhm/public_html/NotCreatedTechParts.txt';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/media/image/pkExplosionChart/';
 //    private $techPartsDataJsonFilePath = '/usr/home/mipzhm/public_html/TechPartsData.txt';
@@ -35,8 +32,6 @@ class DownloadTechPartsImagesService
     {
         $startTime = microtime(true);
 
-        file_put_contents($this->logFilePath, '');
-
         $imageSizes = [];
         $techPartsData = [];
         $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
@@ -44,38 +39,28 @@ class DownloadTechPartsImagesService
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                $logMessage = 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
                 continue;
             }
 
             if (strlen($rowData['external_id']) < 4){
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
                 continue;
             }
 
             if ($rowData['position_x'] == '' || $rowData['position_y'] == '') {
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no coords\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no coords\n";
                 continue;
             }
 
             if ($rowData['cat_article_component_image'] == '') {
-                $logMessage = 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no image\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no image\n";
                 continue;
             }
 
             $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
             if (!$productDetails) {
-                $logMessage = 'Product with External ID = ' . $rowData['external_id'] . " does not exist\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with External ID = ' . $rowData['external_id'] . " does not exist\n";
                 continue;
             }
 
@@ -84,9 +69,7 @@ class DownloadTechPartsImagesService
                 if ($imageSize === false) {
                     $imageSizes[$rowData['cat_article_component_image']] = false;
 
-                    $logMessage = 'Image ' . $rowData['cat_article_component_image_link'] . " has wrong link\n";
-                    echo $logMessage;
-                    file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                    echo 'Image ' . $rowData['cat_article_component_image_link'] . " has wrong link\n";
                     continue;
                 } else {
                     $imageSizes[$rowData['cat_article_component_image']] = $imageSize[0] . ';' . $imageSize[1];
