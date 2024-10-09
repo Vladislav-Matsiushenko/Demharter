@@ -29,6 +29,8 @@ class CreateManufacturersService
 
     public function execute()
     {
+        $startTime = microtime(true);
+
         $manufacturersData = [];
         $csvFile = fopen($this->productsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
@@ -89,12 +91,13 @@ class CreateManufacturersService
                 curl_close($ch);
 
                 $createdManufacturersCount++;
-                if ($createdManufacturersCount % 10 == 0) {
+                if ($createdManufacturersCount % 100 == 0) {
                     echo 'Created ' . $createdManufacturersCount . ' manufacturers. ' . ($manufacturersCount - $createdManufacturersCount) . " left\n";
                 }
             }
         }
 
-        echo "Creating manufacturers completed\n";
+        $executionTime = (microtime(true) - $startTime);
+        echo 'Creating manufacturers completed in ' . $executionTime . " seconds\n";
     }
 }

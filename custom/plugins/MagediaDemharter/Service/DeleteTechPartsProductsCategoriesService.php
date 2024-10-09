@@ -5,17 +5,14 @@ namespace MagediaDemharter\Service;
 class DeleteTechPartsProductsCategoriesService
 {
 // Local
-    private $logFilePath = '/var/www/quad-ersatzteile.loc/NotDeletedProducts.txt';
     private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/EbayPrices.txt';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
-//    private $logFilePath = '/usr/home/mipzhm/public_html/staging/NotDeletedProducts.txt';
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/EbayPrices.txt';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
-//    private $logFilePath = '/usr/home/mipzhm/public_html/NotDeletedProducts.txt';
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/EbayPrices.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $categoryName = 'Quad/Scooter spare parts';
@@ -34,7 +31,7 @@ class DeleteTechPartsProductsCategoriesService
 
     public function execute()
     {
-        file_put_contents($this->logFilePath, '');
+        $startTime = microtime(true);
 
         $mainCategoryId = 0;
         $result = Shopware()->Db()->query('SELECT * FROM s_categories WHERE description = :value', [
@@ -73,16 +70,10 @@ class DeleteTechPartsProductsCategoriesService
 
             $productIds[] = array('id' => $row['articleID']);
             $productIdsForTechParts[] = $row['articleID'];
-            if (count($productIds) >= 500) {
-                $time_start = microtime(true);
 
+            if (count($productIds) >= 500) {
                 $this->deleteProducts($productIds);
                 $productIds = [];
-
-                $time_end = microtime(true);
-                $execution_time = ($time_end - $time_start);
-
-                echo 'Total execution time for deleting 500 products: ' . $execution_time . " sec\n";
             }
         }
 
@@ -95,7 +86,8 @@ class DeleteTechPartsProductsCategoriesService
         Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN ('" . implode("','", $productIdsForTechParts) . "')");
         Shopware()->Db()->query("DELETE FROM s_categories WHERE id IN ('" . implode("','", $this->categoryIds) . "')");
 
-        echo "Deleting tech parts, products and categories completed\n";
+        $executionTime = (microtime(true) - $startTime);
+        echo 'Deleting tech parts, products and categories completed in ' . $executionTime . " seconds\n";
     }
 
     function deleteProducts(array $productIds)

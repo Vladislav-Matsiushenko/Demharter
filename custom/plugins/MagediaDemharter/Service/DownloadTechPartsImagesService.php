@@ -33,6 +33,8 @@ class DownloadTechPartsImagesService
 
     public function execute()
     {
+        $startTime = microtime(true);
+
         file_put_contents($this->logFilePath, '');
 
         $imageSizes = [];
@@ -114,6 +116,7 @@ class DownloadTechPartsImagesService
 
         file_put_contents($this->techPartsDataJsonFilePath, json_encode($techPartsData));
 
-        echo "Downloading tech parts images completed\n";
+        $executionTime = (microtime(true) - $startTime);
+        echo 'Downloading tech parts images completed in ' . $executionTime . " seconds\n";
     }
 }

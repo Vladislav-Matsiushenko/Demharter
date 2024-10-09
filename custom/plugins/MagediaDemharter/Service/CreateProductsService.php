@@ -5,27 +5,23 @@ namespace MagediaDemharter\Service;
 class CreateProductsService
 {
 // Local
-    private $logFilePath = '/var/www/quad-ersatzteile.loc/NotCreatedProducts.txt';
     private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/EbayPrices.txt';
     private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
-//    private $logFilePath = '/usr/home/mipzhm/public_html/staging/NotCreatedProducts.txt';
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/EbayPrices.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
-//    private $logFilePath = '/usr/home/mipzhm/public_html/NotCreatedProducts.txt';
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/EbayPrices.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $categoryName = 'Quad/Scooter spare parts';
-    private $ebayPrices;
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $modelManager;
@@ -38,34 +34,29 @@ class CreateProductsService
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
     }
 
-    public function execute()
+    public function execute($productsNumber = null)
     {
-        file_put_contents($this->logFilePath, '');
+        $startTime = microtime(true);
 
         $productsData = [];
         $categoriesData = [];
+        $readProductsNumber = 0;
         $csvFile = fopen($this->productsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if (!$rowData['products_name']) {
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
                 continue;
             }
 
             if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
                 continue;
             }
 
             if (strlen($rowData['external_id']) < 4) {
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
                 continue;
             }
 
@@ -76,18 +67,23 @@ class CreateProductsService
             }
 
             if ($this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']])) {
-                $logMessage = 'Product with ID = '.$rowData['products_id'] . " already exists\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = '.$rowData['products_id'] . " already exists\n";
                 continue;
             }
 
             $productsData[] = $rowData;
             $categoriesData[] =  $rowData;
+
+            if ($productsNumber) {
+                $readProductsNumber++;
+                if ($readProductsNumber >= $productsNumber) {
+                    break;
+                }
+            }
         }
         fclose($csvFile);
 
-        $this->ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
+        $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers?limit=50000');
@@ -136,22 +132,19 @@ class CreateProductsService
         }
 
         $categoriesTrees = $this->buildCategoriesTrees($categories, $mainCategoryId, []);
+        unset($categories);
 
         $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                $logMessage = 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
                 continue;
             }
 
             if (strlen($rowData['external_id']) < 4){
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
                 continue;
             }
 
@@ -161,7 +154,11 @@ class CreateProductsService
                 }
             }
 
-            $categoriesData[] =  $rowData;
+            foreach ($productsData as $productData) {
+                if ($productData['external_id'] == $rowData['external_id']) {
+                    $categoriesData[] =  $rowData;
+                }
+            }
         }
         fclose($csvFile);
 
@@ -176,6 +173,8 @@ class CreateProductsService
                 $productCategories[$categoryData['external_id']][]['id'] = $categoryId;
             }
         }
+        unset($categoriesTrees);
+        unset($categoriesData);
 
         $productsCount = count($productsData);
         $createdProductsCount = 0;
@@ -189,9 +188,7 @@ class CreateProductsService
             }
 
             if ($manufacturerId == 0 || !isset($productCategories[$product['external_id']])) {
-                $logMessage = 'Product with External ID = ' . $product['external_id'] . " has wrong manufacturer or category\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with External ID = ' . $product['external_id'] . " has wrong manufacturer or category\n";
                 continue;
             }
 
@@ -210,10 +207,10 @@ class CreateProductsService
             );
 
             $ebayPrice = null;
-            if (isset($this->ebayPrices[$product['external_id']])) {
+            if (isset($ebayPrices[$product['external_id']])) {
                 $ebayPrice['customerGroupKey'] = 'Ebay';
-                $ebayPrice['pseudoprice'] = $this->ebayPrices[$product['external_id']]['pseudoprice'];
-                $ebayPrice['percent'] = $this->ebayPrices[$product['external_id']]['percent'];
+                $ebayPrice['pseudoprice'] = $ebayPrices[$product['external_id']]['pseudoprice'];
+                $ebayPrice['percent'] = $ebayPrices[$product['external_id']]['percent'];
 
                 $prices[] = $ebayPrice;
             }
@@ -251,27 +248,25 @@ class CreateProductsService
             if (curl_errno($ch)) {
                 echo 'Error: ' . curl_error($ch);
             } elseif (!json_decode($response)) {
-                $logMessage = 'Product with ID = ' . $product['products_id'] . '; External ID = ' . $product['external_id'] . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $product['products_id'] . '; External ID = ' . $product['external_id'] . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
             } else {
                 if ($ebayPrice) {
                     Shopware()->Db()->query("UPDATE s_articles_prices SET price = "
-                        . $this->ebayPrices[$product['external_id']]['price']
+                        . $ebayPrices[$product['external_id']]['price']
                         . " WHERE pricegroup = 'Ebay' AND articleID = (SELECT articleID FROM s_articles_details WHERE ordernumber = '"
                         . $product['external_id'] . "')");
                 }
             }
-
             curl_close($ch);
 
             $createdProductsCount++;
-            if ($createdProductsCount % 100 == 0) {
+            if ($createdProductsCount % 500 == 0) {
                 echo 'Created ' . $createdProductsCount . ' products. ' . ($productsCount - $createdProductsCount) . " left\n";
             }
         }
 
-        echo "Creating products completed\n";
+        $executionTime = (microtime(true) - $startTime);
+        echo 'Creating products completed in ' . $executionTime . " seconds\n";
     }
 
     private function buildCategoriesTrees($categories, $parentId, $categoriesTree): array

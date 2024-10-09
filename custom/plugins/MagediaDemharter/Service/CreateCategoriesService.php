@@ -5,19 +5,16 @@ namespace MagediaDemharter\Service;
 class CreateCategoriesService
 {
 // Local
-    private $logFilePath = '/var/www/quad-ersatzteile.loc/NotCreatedCategories.txt';
     private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
-//    private $logFilePath = '/usr/home/mipzhm/public_html/staging/NotCreatedCategories.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
-//    private $logFilePath = '/usr/home/mipzhm/public_html/NotCreatedCategories.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
@@ -36,7 +33,7 @@ class CreateCategoriesService
 
     public function execute()
     {
-        file_put_contents($this->logFilePath, '');
+        $startTime = microtime(true);
 
         $categoriesData = [];
         $csvFile = fopen($this->productsDataCsvFilePath, 'r');
@@ -44,23 +41,17 @@ class CreateCategoriesService
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if (!$rowData['products_name']){
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
                 continue;
             }
 
             if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
                 continue;
             }
 
             if (strlen($rowData['external_id']) < 4){
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
                 continue;
             }
 
@@ -79,16 +70,12 @@ class CreateCategoriesService
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                $logMessage = 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
                 continue;
             }
 
             if (strlen($rowData['external_id']) < 4){
-                $logMessage = 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
                 continue;
             }
 
@@ -168,11 +155,12 @@ class CreateCategoriesService
             }
 
             $createdCategoriesCount++;
-            if ($createdCategoriesCount % 100 == 0) {
+            if ($createdCategoriesCount % 500 == 0) {
                 echo 'Created ' . $createdCategoriesCount . ' categories. ' . ($categoriesCount - $createdCategoriesCount) . " left\n";
             }
         }
 
-        echo "Creating categories completed\n";
+        $executionTime = (microtime(true) - $startTime);
+        echo 'Creating categories completed in ' . $executionTime . " seconds\n";
     }
 }

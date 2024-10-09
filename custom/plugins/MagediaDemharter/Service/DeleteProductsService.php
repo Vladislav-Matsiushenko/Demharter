@@ -5,19 +5,16 @@ namespace MagediaDemharter\Service;
 class DeleteProductsService
 {
 // Local
-    private $logFilePath = '/var/www/quad-ersatzteile.loc/NotDeletedProducts.txt';
     private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/EbayPrices.txt';
     private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
-//    private $logFilePath = '/usr/home/mipzhm/public_html/staging/NotDeletedProducts.txt';
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/EbayPrices.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
-//    private $logFilePath = '/usr/home/mipzhm/public_html/NotDeletedProducts.txt';
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/EbayPrices.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
@@ -35,7 +32,7 @@ class DeleteProductsService
 
     public function execute()
     {
-        file_put_contents($this->logFilePath, '');
+        $startTime = microtime(true);
 
         $orderNumbers = [];
         $ebayPrices = [];
@@ -44,13 +41,7 @@ class DeleteProductsService
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if (strlen($rowData['external_id']) < 4) {
-                $logMessage = 'Product with ID = ' . $rowData['products_id']
-                    . '; External ID = ' . $rowData['external_id']
-                    . '; Name = ' . $rowData['products_name']
-                    . '; Tax ID = ' . $rowData['products_tax_class_id']
-                    . " was not deleted!\n";
-                echo $logMessage;
-                file_put_contents($this->logFilePath, $logMessage, FILE_APPEND);
+                echo 'Product with ID = ' . $rowData['products_id'] . ' and External ID = ' . $rowData['external_id'] . " was not deleted!\n";
                 continue;
             }
             $orderNumbers[] = $rowData['external_id'];
@@ -75,15 +66,8 @@ class DeleteProductsService
             $productIds[] = array('id' => $row['articleID']);
 
             if (count($productIds) >= 500) {
-                $time_start = microtime(true);
-
                 $this->deleteProducts($productIds);
                 $productIds = [];
-
-                $time_end = microtime(true);
-                $execution_time = ($time_end - $time_start);
-
-                echo 'Total execution time for deleting 500 products: ' . $execution_time . " sec\n";
             }
         }
 
@@ -91,7 +75,8 @@ class DeleteProductsService
             $this->deleteProducts($productIds);
         }
 
-        echo "Deleting products completed\n";
+        $executionTime = (microtime(true) - $startTime);
+        echo 'Deleting products completed in ' . $executionTime . " seconds\n";
     }
 
     function deleteProducts(array $productIds)

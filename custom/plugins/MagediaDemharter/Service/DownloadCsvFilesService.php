@@ -20,6 +20,8 @@ class DownloadCsvFilesService
 
     public function execute()
     {
+        $startTime = microtime(true);
+
         if (file_exists($this->productsDataCsvFilePath)) {
             unlink($this->productsDataCsvFilePath);
         }
@@ -39,5 +41,8 @@ class DownloadCsvFilesService
         } else {
             echo "Error while downloading TechPartsData file\n";
         }
+
+        $executionTime = (microtime(true) - $startTime);
+        echo 'Downloading CSV files completed in ' . $executionTime . " seconds\n";
     }
 }
