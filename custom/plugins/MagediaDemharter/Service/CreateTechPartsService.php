@@ -84,7 +84,7 @@ class CreateTechPartsService
         $createdTechPartsCount = 0;
         foreach($techPartsData as $techPart) {
             if (!isset($techPart['category_id'])) {
-                echo 'Category with ID = ' . $techPart['categories_id'] . ' linked with product with ID = ' . $techPart['products_id'] . " does not exist\n";
+                echo 'Category ' . $techPart['products_category_tree'] . " does not exist\n";
                 continue;
             }
 

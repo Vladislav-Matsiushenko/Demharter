@@ -88,12 +88,16 @@ class DownloadTechPartsImagesService
                     $rowData['external_id'][$i] = '_';
                 }
             }
-            $rowData['products_coords'] = $rowData['position_x'] . ';' . $rowData['position_y'];
-            $rowData['product_id'] = $productDetails->getArticleID();
-            $rowData['product_details_id'] = $productDetails->getId();
-            $rowData['cat_article_component_image_size'] = $imageSizes[$rowData['cat_article_component_image']];
 
-            $techPartsData[] =  $rowData;
+            $techPartsData[] = array(
+                'products_category_tree' => $rowData['products_category_tree'],
+                'products_coords' => $rowData['position_x'] . ';' . $rowData['position_y'],
+                'product_id' => $productDetails->getArticleID(),
+                'product_details_id' => $productDetails->getId(),
+                'cat_article_component_image' => $rowData['cat_article_component_image'],
+                'cat_article_component_image_size' => $imageSizes[$rowData['cat_article_component_image']],
+
+            );
         }
         fclose($csvFile);
 

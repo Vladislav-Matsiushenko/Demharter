@@ -71,8 +71,24 @@ class CreateProductsService
                 continue;
             }
 
-            $productsData[] = $rowData;
-            $categoriesData[] =  $rowData;
+            $productsData[] = array(
+                'external_id' => $rowData['external_id'],
+                'products_weight' => $rowData['products_weight'],
+                'products_image_1' => $rowData['products_image_1'],
+                'products_tax_class_id' => $rowData['products_tax_class_id'],
+                'products_tax_percent' => $rowData['products_tax_percent'],
+                'products_name' => $rowData['products_name'],
+                'products_description' => $rowData['products_description'],
+                'products_category_tree' => $rowData['products_category_tree'],
+                'cat_manufacturer' => $rowData['cat_manufacturer'],
+                'VK_brutto' => $rowData['VK_brutto'],
+                'stock_count' => $rowData['stock_count'],
+            );
+
+            $categoriesData[] = array(
+                'external_id' => $rowData['external_id'],
+                'products_category_tree' => $rowData['products_category_tree']
+            );
 
             if ($productsNumber) {
                 $readProductsNumber++;
@@ -156,7 +172,10 @@ class CreateProductsService
 
             foreach ($productsData as $productData) {
                 if ($productData['external_id'] == $rowData['external_id']) {
-                    $categoriesData[] =  $rowData;
+                    $categoriesData[] =  array(
+                        'external_id' => $rowData['external_id'],
+                        'products_category_tree' => $rowData['products_category_tree']
+                    );
                 }
             }
         }
@@ -248,7 +267,7 @@ class CreateProductsService
             if (curl_errno($ch)) {
                 echo 'Error: ' . curl_error($ch);
             } elseif (!json_decode($response)) {
-                echo 'Product with ID = ' . $product['products_id'] . '; External ID = ' . $product['external_id'] . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
+                echo 'Product with External ID = ' . $product['external_id'] . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
             } else {
                 if ($ebayPrice) {
                     Shopware()->Db()->query("UPDATE s_articles_prices SET price = "
