@@ -119,12 +119,17 @@ class CreateCategoriesService
             $subCategoriesCount = 0;
             $firstIteration = true;
             foreach ($names as $name){
+                $found = false;
                 foreach ($categories as $category) {
                     if ($name == $category->name && ($firstIteration || $category->parentId == $parentCategoryId)) {
                         $subCategoriesCount++;
                         $parentCategoryId = $category->id;
+                        $found = true;
                         break;
                     }
+                }
+                if (!$found) {
+                    break;
                 }
                 $firstIteration = false;
             }
