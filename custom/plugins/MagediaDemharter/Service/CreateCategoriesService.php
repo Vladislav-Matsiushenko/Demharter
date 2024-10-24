@@ -91,7 +91,7 @@ class CreateCategoriesService
         $categoriesData = array_unique($categoriesData);
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=50000');
+        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=100000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
@@ -115,14 +115,14 @@ class CreateCategoriesService
             $names = explode('=>', $names);
             $names = array_map('trim', $names);
 
-            $categoryId = 0;
+            $parentCategoryId = 0;
             $subCategoriesCount = 0;
             $firstIteration = true;
-            foreach ($names as $item){
+            foreach ($names as $name){
                 foreach ($categories as $category) {
-                    if ($item == $category->name && ($firstIteration || $category->parentId == $categoryId)) {
+                    if ($name == $category->name && ($firstIteration || $category->parentId == $parentCategoryId)) {
                         $subCategoriesCount++;
-                        $categoryId = $category->id;
+                        $parentCategoryId = $category->id;
                         break;
                     }
                 }
@@ -134,7 +134,7 @@ class CreateCategoriesService
                 curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories');
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
                 curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array('name' => $names[$i], 'parentId' => $categoryId)));
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array('name' => $names[$i], 'parentId' => $parentCategoryId)));
                 curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
                 curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
@@ -148,9 +148,8 @@ class CreateCategoriesService
 
                 $newCategoryId = json_decode($response)->data->id;
                 if ($newCategoryId) {
-                    $categories[] = (Object)['id' => $newCategoryId, 'name' => $names[$i], 'parentId' => $categoryId];
-                    $categoryId = $newCategoryId;
-                    $subCategoriesCount = $i + 1;
+                    $categories[] = (Object)['id' => $newCategoryId, 'name' => $names[$i], 'parentId' => $parentCategoryId];
+                    $parentCategoryId = $newCategoryId;
                 }
             }
 

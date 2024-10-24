@@ -121,7 +121,7 @@ class CreateProductsService
         $manufacturers = json_decode($response)->data;
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=50000');
+        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=100000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
