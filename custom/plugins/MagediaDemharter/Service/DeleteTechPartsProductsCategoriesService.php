@@ -19,11 +19,13 @@ class DeleteTechPartsProductsCategoriesService
     private $categoryIds = [];
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
+    private $helper;
     private $modelManager;
     private $dbalConnection;
 
     public function __construct()
     {
+        $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
@@ -72,13 +74,17 @@ class DeleteTechPartsProductsCategoriesService
             $productIdsForTechParts[] = $row['articleID'];
 
             if (count($productIds) >= 500) {
-                $this->deleteProducts($productIds);
+                $this->helper->deleteProduct($this->endpointUrl, $this->userName, $this->apiKey,
+                    json_encode($productIds)
+                );
                 $productIds = [];
             }
         }
 
         if (count($productIds) > 0) {
-            $this->deleteProducts($productIds);
+            $this->helper->deleteProduct($this->endpointUrl, $this->userName, $this->apiKey,
+                json_encode($productIds)
+            );
         }
 
         file_put_contents($this->ebayPricesFilePath, json_encode($ebayPrices));
@@ -88,25 +94,6 @@ class DeleteTechPartsProductsCategoriesService
 
         $executionTime = (microtime(true) - $startTime);
         echo 'Deleting tech parts, products and categories completed in ' . $executionTime . " seconds\n";
-    }
-
-    function deleteProducts(array $productIds)
-    {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/articles');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($productIds));
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-        $response = curl_exec($ch);
-
-        if (curl_errno($ch)) {
-            echo 'Error: ' . curl_error($ch);
-        }
-
-        curl_close($ch);
     }
 
     function getChildCategories(int $parentId)

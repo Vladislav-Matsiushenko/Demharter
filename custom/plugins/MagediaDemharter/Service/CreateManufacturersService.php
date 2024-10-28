@@ -17,11 +17,13 @@ class CreateManufacturersService
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
+    private $helper;
     private $modelManager;
     private $dbalConnection;
 
     public function __construct()
     {
+        $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
@@ -43,25 +45,7 @@ class CreateManufacturersService
         fclose($csvFile);
         $manufacturersData = array_unique($manufacturersData);
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers?limit=50000');
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
-        $response = curl_exec($ch);
-
-        if(curl_errno($ch)) {
-            echo 'Curl error: ' . curl_error($ch);
-            curl_close($ch);
-
-            return;
-        }
-
-        curl_close($ch);
-
-        $manufacturers = json_decode($response)->data;
+        $manufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
         $manufacturersCount = count($manufacturersData);
         $createdManufacturersCount = 0;
         foreach ($manufacturersData as $name) {
@@ -74,21 +58,9 @@ class CreateManufacturersService
             }
 
             if ($manufacturerId == 0) {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/manufacturers');
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array('name' => $name, 'image' => '')));
-                curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-                curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-                $response = curl_exec($ch);
-
-                if (curl_errno($ch)) {
-                    echo 'Curl error: ' . curl_error($ch);
-                }
-
-                curl_close($ch);
+                $this->helper->createManufacturer($this->endpointUrl, $this->userName, $this->apiKey,
+                    json_encode(array('name' => $name, 'image' => ''))
+                );
 
                 $createdManufacturersCount++;
                 if ($createdManufacturersCount % 100 == 0) {

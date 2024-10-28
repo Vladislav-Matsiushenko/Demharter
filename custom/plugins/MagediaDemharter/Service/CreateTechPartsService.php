@@ -18,11 +18,13 @@ class CreateTechPartsService
     private $categoryName = 'Quad/Scooter spare parts';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
+    private $helper;
     private $modelManager;
     private $dbalConnection;
 
     public function __construct()
     {
+        $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
@@ -34,35 +36,7 @@ class CreateTechPartsService
 
         $techPartsData = json_decode(file_get_contents($this->techPartsDataJsonFilePath), true);
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=100000');
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
-        $response = curl_exec($ch);
-
-        if(curl_errno($ch)) {
-            echo 'Curl error: ' . curl_error($ch);
-            curl_close($ch);
-
-            return;
-        }
-
-        curl_close($ch);
-        $categories = json_decode($response)->data;
-
-        $mainCategoryId = 0;
-        foreach ($categories as $category) {
-            if ($category->name == $this->categoryName) {
-                $mainCategoryId = $category->id;
-                break;
-            }
-        }
-
-        $categoriesTrees = $this->buildCategoriesTrees($categories, $mainCategoryId, []);
-        unset($categories);
+        $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
 
         foreach ($techPartsData as $index => $techPartData) {
             $categoryTree = explode('=>', $techPartData['products_category_tree']);
@@ -170,35 +144,5 @@ class CreateTechPartsService
 
         $executionTime = (microtime(true) - $startTime);
         echo 'Creating tech parts completed in ' . $executionTime . " seconds\n";
-    }
-
-    private function buildCategoriesTrees($categories, $parentId, $categoriesTree): array
-    {
-        $categoriesTrees = [];
-
-        $childCategories = [];
-        foreach ($categories as $category) {
-            if ($category->parentId == $parentId) {
-                $childCategories[] = $category;
-            }
-        }
-
-        if (count($childCategories) > 0) {
-            foreach ($childCategories as $childCategory) {
-                $newCategoryTree = array_merge($categoriesTree, [$childCategory->name]);
-                $childCategoryTree = $this->buildCategoriesTrees($categories, $childCategory->id, $newCategoryTree);
-
-                if (empty($childCategoryTree)) {
-                    $categoriesTrees[$childCategory->id] = implode(' => ', $newCategoryTree);
-                } else {
-                    foreach ($childCategoryTree as $key => $value) {
-                        $categoriesTrees[$key] = $value;
-                    }
-                }
-
-            }
-        }
-
-        return $categoriesTrees;
     }
 }

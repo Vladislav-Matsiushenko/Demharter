@@ -5,6 +5,8 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <service id="magedia_demharter.helper" class="MagediaDemharter\Helper\Helper" public="true"/>
+
         <service id="magedia_demharter.download_csv_files_service" class="MagediaDemharter\Service\DownloadCsvFilesService">
         </service>
         <service id="magedia_demharter.commands.download_csv_files_command" class="MagediaDemharter\Commands\DownloadCsvFilesCommand">

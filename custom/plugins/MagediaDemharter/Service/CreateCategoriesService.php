@@ -21,11 +21,13 @@ class CreateCategoriesService
     private $categoryName = 'Quad/Scooter spare parts';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
+    private $helper;
     private $modelManager;
     private $dbalConnection;
 
     public function __construct()
     {
+        $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
@@ -90,25 +92,7 @@ class CreateCategoriesService
         fclose($csvFile);
         $categoriesData = array_unique($categoriesData);
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories?limit=100000');
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json'));
-        $response = curl_exec($ch);
-
-        if(curl_errno($ch)) {
-            echo 'Curl error: ' . curl_error($ch);
-            curl_close($ch);
-
-            return;
-        }
-
-        curl_close($ch);
-
-        $categories = json_decode($response)->data;
+        $categories = $this->helper->getCategories($this->endpointUrl, $this->userName, $this->apiKey);
         $categoriesCount = count($categoriesData);
         $createdCategoriesCount = 0;
         foreach ($categoriesData as $names) {
@@ -135,21 +119,9 @@ class CreateCategoriesService
             }
 
             for ($i = $subCategoriesCount; $i < count($names); $i++) {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $this->endpointUrl . '/categories');
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array('name' => $names[$i], 'parentId' => $parentCategoryId)));
-                curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-                curl_setopt($ch, CURLOPT_USERPWD, $this->userName . ':' . $this->apiKey);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-                $response = curl_exec($ch);
-
-                if (curl_errno($ch)) {
-                    echo 'Curl error: ' . curl_error($ch);
-                }
-
-                curl_close($ch);
+                $response = $this->helper->createCategory($this->endpointUrl, $this->userName, $this->apiKey,
+                    json_encode(array('name' => $names[$i], 'parentId' => $parentCategoryId))
+                );
 
                 $newCategoryId = json_decode($response)->data->id;
                 if ($newCategoryId) {
