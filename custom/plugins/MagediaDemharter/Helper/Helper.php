@@ -21,7 +21,7 @@ class Helper
     private function getEntities($entity, $endpointUrl, $userName, $apiKey): array
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $endpointUrl . '/' . $entity . '?limit=50000');
+        curl_setopt($ch, CURLOPT_URL, $endpointUrl . '/' . $entity . '?limit=100000');
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, $userName . ':' . $apiKey);

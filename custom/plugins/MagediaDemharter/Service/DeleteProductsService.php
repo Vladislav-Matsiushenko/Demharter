@@ -63,9 +63,11 @@ class DeleteProductsService
         file_put_contents($this->ebayPricesFilePath, json_encode($ebayPrices));
 
         $productIds = [];
+        $productIdsForTechParts =[];
         $result = Shopware()->Db()->query("SELECT articleID FROM s_articles_details WHERE ordernumber IN ('" . implode("','", $orderNumbers) . "')");
         foreach ($result as $row) {
             $productIds[] = array('id' => $row['articleID']);
+            $productIdsForTechParts[] = $row['articleID'];
 
             if (count($productIds) >= 500) {
                 $this->helper->deleteProduct($this->endpointUrl, $this->userName, $this->apiKey,
@@ -80,6 +82,8 @@ class DeleteProductsService
                 json_encode($productIds)
             );
         }
+
+        Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN ('" . implode("','", $productIdsForTechParts) . "')");
 
         $executionTime = (microtime(true) - $startTime);
         echo 'Deleting products completed in ' . $executionTime . " seconds\n";
