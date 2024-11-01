@@ -8,21 +8,29 @@ class DownloadTechPartsImagesService
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $imagesFilePath = '/var/www/quad-ersatzteile.loc/media/image/pkExplosionChart/';
     private $techPartsDataJsonFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.txt';
+    private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/staging/media/image/pkExplosionChart/';
 //    private $techPartsDataJsonFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.txt';
+//    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/media/image/pkExplosionChart/';
 //    private $techPartsDataJsonFilePath = '/usr/home/mipzhm/public_html/TechPartsData.txt';
+//    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
+    private $categoryName = 'Quad/Scooter spare parts';
+    private $userName = 'schwab';
+    private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
+    private $helper;
     private $modelManager;
     private $dbalConnection;
 
     public function __construct()
     {
+        $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
@@ -31,6 +39,8 @@ class DownloadTechPartsImagesService
     public function execute()
     {
         $startTime = microtime(true);
+
+        $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
 
         $imageSizes = [];
         $techPartsData = [];
@@ -58,6 +68,12 @@ class DownloadTechPartsImagesService
                 continue;
             }
 
+            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
+                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
+                    $rowData['external_id'][$i] = '_';
+                }
+            }
+
             $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
             if (!$productDetails) {
                 echo 'Product with External ID = ' . $rowData['external_id'] . " does not exist\n";
@@ -83,20 +99,23 @@ class DownloadTechPartsImagesService
                 continue;
             }
 
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
-                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
-                    $rowData['external_id'][$i] = '_';
-                }
+            $categoryTree = explode('=>', $rowData['products_category_tree']);
+            $categoryTree = array_map('trim', $categoryTree);
+            $categoryTree = implode(' => ', $categoryTree);
+
+            $categoryId = array_search($categoryTree, $categoriesTrees);
+            if ($categoryId === false) {
+                echo 'Category ' . $rowData['products_category_tree'] . " does not exist\n";
+                continue;
             }
 
             $techPartsData[] = array(
-                'products_category_tree' => $rowData['products_category_tree'],
+                'category_id' => $categoryId,
                 'products_coords' => $rowData['position_x'] . ';' . $rowData['position_y'],
                 'product_id' => $productDetails->getArticleID(),
                 'product_details_id' => $productDetails->getId(),
                 'cat_article_component_image' => $rowData['cat_article_component_image'],
                 'cat_article_component_image_size' => $imageSizes[$rowData['cat_article_component_image']],
-
             );
         }
         fclose($csvFile);

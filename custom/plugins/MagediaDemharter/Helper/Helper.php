@@ -138,4 +138,34 @@ class Helper
 
         return $categoriesTrees;
     }
+
+    public function getChildCategories($categoryName)
+    {
+        $mainCategoryId = 0;
+        $result = Shopware()->Db()->query('SELECT * FROM s_categories WHERE description = :value', [
+            'value' => $categoryName
+        ]);
+        foreach ($result as $row) {
+            $mainCategoryId = $row['id'];
+        }
+
+        $categoryIds = [];
+        $this->getChildCategoriesByParentId($mainCategoryId, $categoryIds);
+
+        return $categoryIds;
+    }
+
+    public function getChildCategoriesByParentId(int $parentId, array &$categoryIds)
+    {
+        $categories = Shopware()->Db()->query('SELECT * FROM s_categories WHERE parent = :value', [
+            'value' => $parentId
+        ]);
+
+        foreach ($categories as $category) {
+            $categoryIds[$category['id']] = $category['id'];
+            $this->getChildCategoriesByParentId($category['id'], $categoryIds);
+        }
+
+        return $categoryIds;
+    }
 }
