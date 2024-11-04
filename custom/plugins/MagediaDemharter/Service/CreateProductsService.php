@@ -127,14 +127,10 @@ class CreateProductsService
                 }
             }
 
-            foreach ($productsData as $productData) {
-                if ($productData['external_id'] == $rowData['external_id']) {
-                    $categoriesData[] =  array(
-                        'external_id' => $rowData['external_id'],
-                        'products_category_tree' => $rowData['products_category_tree']
-                    );
-                }
-            }
+            $categoriesData[] =  array(
+                'external_id' => $rowData['external_id'],
+                'products_category_tree' => $rowData['products_category_tree']
+            );
         }
         fclose($csvFile);
 

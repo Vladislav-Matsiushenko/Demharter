@@ -30,48 +30,33 @@ class CreateTechPartsService
         $startTime = microtime(true);
 
         $categoryIds = $this->helper->getChildCategories($this->categoryName);
+        Shopware()->Db()->query("DELETE FROM pk_explosion_chart_categories WHERE categoryID IN ('" . implode("','", $categoryIds) . "')");
+        Shopware()->Db()->query("DELETE FROM pk_explosion_chart_hotspots WHERE categoryID IN ('" . implode("','", $categoryIds) . "')");
         Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN (SELECT articleID FROM s_articles_categories WHERE categoryID IN ('" . implode("','", $categoryIds) . "'))");
 
         $techPartsData = json_decode(file_get_contents($this->techPartsDataJsonFilePath), true);
 
         $categoriesInsertData = [];
-        $insertedCategoriesData = [];
         $hotspotsInsertData = [];
         $techPartsCount = count($techPartsData);
         $createdTechPartsCount = 0;
         foreach($techPartsData as $techPart) {
-            if (!isset($categoriesInsertData[$techPart['category_id']]) && !isset($insertedCategoriesData[$techPart['category_id']])) {
-                $needInsert = true;
-                $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_categories WHERE categoryID = " . $techPart['category_id']);
-                foreach ($result as $row) {
-                    $needInsert = !$row['id'];
-                }
-                if ($needInsert) {
-                    $categoriesInsertData[$techPart['category_id']] = "('"
-                        . $techPart['cat_article_component_image'] . "', '"
-                        . $techPart['cat_article_component_image_size'] . "', "
-                        . $techPart['category_id'] . ")";
-                } else {
-                    $insertedCategoriesData[$techPart['category_id']] = true;
-                }
+            if (!isset($categoriesInsertData[$techPart['category_id']])) {
+                $categoriesInsertData[$techPart['category_id']] = "('"
+                    . $techPart['cat_article_component_image'] . "', '"
+                    . $techPart['cat_article_component_image_size'] . "', "
+                    . $techPart['category_id'] . ")";
             }
 
-            $hotspotId = null;
+            Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
+                . $techPart['category_id'] . ", '"
+                . $techPart['products_coords'] . "')");
+
+            $hotspotId = 0;
             $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $techPart['category_id']
                 . " AND coords = '" . $techPart['products_coords'] . "'");
             foreach ($result as $row) {
                 $hotspotId = $row['id'];
-            }
-            if (!$hotspotId) {
-                Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
-                    . $techPart['category_id'] . ", '"
-                    . $techPart['products_coords'] . "')");
-
-                $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $techPart['category_id']
-                    . " AND coords = '" . $techPart['products_coords'] . "'");
-                foreach ($result as $row) {
-                    $hotspotId = $row['id'];
-                }
             }
 
             if (!isset($hotspotsInsertData[$hotspotId])) {
