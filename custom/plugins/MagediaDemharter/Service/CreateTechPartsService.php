@@ -46,7 +46,9 @@ class CreateTechPartsService
         $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
 
         $imageSizes = [];
-        $techPartsData = [];
+        $categoriesInsertData = [];
+        $hotspotsInsertData = [];
+        $createdTechPartsCount = 0;
         $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
@@ -112,38 +114,20 @@ class CreateTechPartsService
                 continue;
             }
 
-            $techPartsData[] = array(
-                'category_id' => $categoryId,
-                'products_coords' => $rowData['position_x'] . ';' . $rowData['position_y'],
-                'product_id' => $productDetails->getArticleID(),
-                'product_details_id' => $productDetails->getId(),
-                'cat_article_component_image' => $rowData['cat_article_component_image'],
-                'cat_article_component_image_size' => $imageSizes[$rowData['cat_article_component_image']],
-            );
-        }
-        fclose($csvFile);
-        unset($imageSizes);
-        unset($categoriesTrees);
-
-        $categoriesInsertData = [];
-        $hotspotsInsertData = [];
-        $techPartsCount = count($techPartsData);
-        $createdTechPartsCount = 0;
-        foreach($techPartsData as $techPart) {
-            if (!isset($categoriesInsertData[$techPart['category_id']])) {
-                $categoriesInsertData[$techPart['category_id']] = "('"
-                    . $techPart['cat_article_component_image'] . "', '"
-                    . $techPart['cat_article_component_image_size'] . "', "
-                    . $techPart['category_id'] . ")";
+            if (!isset($categoriesInsertData[$categoryId])) {
+                $categoriesInsertData[$categoryId] = "('"
+                    . $rowData['cat_article_component_image'] . "', '"
+                    . $imageSizes[$rowData['cat_article_component_image']] . "', "
+                    . $categoryId . ")";
             }
 
             Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
-                . $techPart['category_id'] . ", '"
-                . $techPart['products_coords'] . "')");
+                . $categoryId . ", '"
+                . $rowData['position_x'] . ';' . $rowData['position_y'] . "')");
 
             $hotspotId = 0;
-            $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $techPart['category_id']
-                . " AND coords = '" . $techPart['products_coords'] . "'");
+            $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $categoryId
+                . " AND coords = '" . $rowData['position_x'] . ';' . $rowData['position_y'] . "'");
             foreach ($result as $row) {
                 $hotspotId = $row['id'];
             }
@@ -151,35 +135,36 @@ class CreateTechPartsService
             if (!isset($hotspotsInsertData[$hotspotId])) {
                 $hotspotsInsertData[$hotspotId] = "("
                     . $hotspotId . ", "
-                    . $techPart['product_id'] . ", "
-                    . $techPart['product_details_id'] . ", 1)";
-            }
-
-            if (count($categoriesInsertData) >= 500) {
-                Shopware()->Db()->query("INSERT INTO pk_explosion_chart_categories (img, size, categoryID) VALUES "
-                    . implode(", ", $categoriesInsertData));
-
-                $categoriesInsertData = [];
-            }
-
-            if (count($hotspotsInsertData) >= 1000) {
-                Shopware()->Db()->query("INSERT INTO pk_explosion_chart_articles (hotspotID, articleID, articleDetailID, active) VALUES "
-                    . implode(", ", $hotspotsInsertData));
-
-                $hotspotsInsertData = [];
+                    . $productDetails->getArticleID() . ", "
+                    . $productDetails->getId() . ", 1)";
             }
 
            $createdTechPartsCount++;
             if ($createdTechPartsCount % 1000 == 0) {
-                echo 'Created ' . $createdTechPartsCount . ' tech parts. ' . ($techPartsCount - $createdTechPartsCount) . " left\n";
+                echo 'Created ' . $createdTechPartsCount . " tech parts\n";
             }
         }
+        fclose($csvFile);
+        unset($imageSizes);
+        unset($categoriesTrees);
 
+        while (count($categoriesInsertData) >= 500) {
+            Shopware()->Db()->query("INSERT INTO pk_explosion_chart_categories (img, size, categoryID) VALUES "
+                . implode(', ', array_slice($categoriesInsertData, 0, 500)));
+
+            $categoriesInsertData = array_slice($categoriesInsertData, 500);
+        }
         if (count($categoriesInsertData) > 0) {
             Shopware()->Db()->query("INSERT INTO pk_explosion_chart_categories (img, size, categoryID) VALUES "
                 . implode(', ', $categoriesInsertData));
         }
 
+        while (count($hotspotsInsertData) >= 1000) {
+            Shopware()->Db()->query("INSERT INTO pk_explosion_chart_articles (hotspotID, articleID, articleDetailID, active) VALUES "
+                . implode(', ', array_slice($hotspotsInsertData, 0, 1000)));
+
+            $hotspotsInsertData = array_slice($hotspotsInsertData, 1000);
+        }
         if (count($hotspotsInsertData) > 0) {
             Shopware()->Db()->query("INSERT INTO pk_explosion_chart_articles (hotspotID, articleID, articleDetailID, active) VALUES "
                 . implode(', ', $hotspotsInsertData));
