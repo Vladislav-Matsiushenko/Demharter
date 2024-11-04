@@ -3,7 +3,6 @@
 namespace MagediaDemharter\Commands;
 
 use Shopware\Commands\ShopwareCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use MagediaDemharter\Service\CreateProductsService;
@@ -22,17 +21,12 @@ class CreateProductsCommand extends ShopwareCommand
     {
         $this
             ->setName('demharter:create_products')
-            ->setDescription('Create Products (Demharter)')
-            ->addArgument(
-                'number',
-                InputArgument::OPTIONAL,
-                'Products Number'
-            );
+            ->setDescription('Create Products (Demharter)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->createProductsService->execute($input->getArgument('number'));
+        $this->createProductsService->execute();
         $output->writeln("\nSuccess");
     }
 }

@@ -36,13 +36,13 @@ class CreateProductsService
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
     }
 
-    public function execute($productsNumber = null)
+    public function execute()
     {
         $startTime = microtime(true);
 
         $productsData = [];
+        $manufacturersData = [];
         $categoriesData = [];
-        $readProductsNumber = 0;
         $csvFile = fopen($this->productsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
@@ -87,23 +87,36 @@ class CreateProductsService
                 'stock_count' => $rowData['stock_count'],
             );
 
+            $manufacturersData[] = $rowData['cat_manufacturer'];
+
             $categoriesData[] = array(
                 'external_id' => $rowData['external_id'],
                 'products_category_tree' => $rowData['products_category_tree']
             );
-
-            if ($productsNumber) {
-                $readProductsNumber++;
-                if ($readProductsNumber >= $productsNumber) {
-                    break;
-                }
-            }
         }
         fclose($csvFile);
 
-        $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
-
+        $manufacturersData = array_unique($manufacturersData);
         $manufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
+        foreach ($manufacturersData as $name) {
+            $manufacturerId = 0;
+            foreach ($manufacturers as $manufacturer){
+                if ($name == $manufacturer->name){
+                    $manufacturerId = $manufacturer->id;
+                    break;
+                }
+            }
+
+            if ($manufacturerId == 0) {
+                $this->helper->createManufacturer($this->endpointUrl, $this->userName, $this->apiKey,
+                    json_encode(array('name' => $name, 'image' => ''))
+                );
+            }
+        }
+        unset($manufacturersData);
+        $manufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
+
+        $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
 
         $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
 

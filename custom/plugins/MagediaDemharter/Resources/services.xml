@@ -21,13 +21,6 @@
             <argument type="service" id="magedia_demharter.delete_products_service"/>
         </service>
 
-        <service id="magedia_demharter.create_manufacturers_service" class="MagediaDemharter\Service\CreateManufacturersService">
-        </service>
-        <service id="magedia_demharter.commands.create_manufacturers_command" class="MagediaDemharter\Commands\CreateManufacturersCommand">
-            <tag name="console.command" command="demharter:create_manufacturers"/>
-            <argument type="service" id="magedia_demharter.create_manufacturers_service"/>
-        </service>
-
         <service id="magedia_demharter.create_categories_service" class="MagediaDemharter\Service\CreateCategoriesService">
         </service>
         <service id="magedia_demharter.commands.create_categories_command" class="MagediaDemharter\Commands\CreateCategoriesCommand">
@@ -40,13 +33,6 @@
         <service id="magedia_demharter.commands.create_products_command" class="MagediaDemharter\Commands\CreateProductsCommand">
             <tag name="console.command" command="demharter:create_products"/>
             <argument type="service" id="magedia_demharter.create_products_service"/>
-        </service>
-
-        <service id="magedia_demharter.download_tech_parts_images_service" class="MagediaDemharter\Service\DownloadTechPartsImagesService">
-        </service>
-        <service id="magedia_demharter.commands.download_tech_parts_images_command" class="MagediaDemharter\Commands\DownloadTechPartsImagesCommand">
-            <tag name="console.command" command="demharter:download_tech_parts_images"/>
-            <argument type="service" id="magedia_demharter.download_tech_parts_images_service"/>
         </service>
 
         <service id="magedia_demharter.create_tech_parts_service" class="MagediaDemharter\Service\CreateTechPartsService">
