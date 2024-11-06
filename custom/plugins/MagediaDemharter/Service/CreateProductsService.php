@@ -52,22 +52,12 @@ class CreateProductsService
                 continue;
             }
 
-            if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
-                continue;
-            }
-
             if (strlen($rowData['external_id']) < 4) {
                 echo 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
                 continue;
             }
 
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++) {
-                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
-                    $rowData['external_id'][$i] = '_';
-                }
-            }
-
+            $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
             if ($this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']])) {
                 echo 'Product with ID = '.$rowData['products_id'] . " already exists\n";
                 continue;
@@ -81,43 +71,22 @@ class CreateProductsService
                 'products_tax_percent' => $rowData['products_tax_percent'],
                 'products_name' => $rowData['products_name'],
                 'products_description' => $rowData['products_description'],
-                'cat_manufacturer' => $rowData['cat_manufacturer'],
                 'VK_brutto' => $rowData['VK_brutto'],
                 'stock_count' => $rowData['stock_count'],
             );
 
-            $manufacturersData[] = $rowData['cat_manufacturer'];
-
-            $categoriesData[] = array(
-                'external_id' => $rowData['external_id'],
-                'products_category_tree' => $rowData['products_category_tree']
-            );
-        }
-        fclose($csvFile);
-
-        $manufacturersData = array_unique($manufacturersData);
-        $manufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
-        foreach ($manufacturersData as $name) {
-            $manufacturerId = 0;
-            foreach ($manufacturers as $manufacturer){
-                if ($name == $manufacturer->name){
-                    $manufacturerId = $manufacturer->id;
-                    break;
-                }
+            if ($rowData['cat_manufacturer'] != '' && $rowData['cat_manufacturer'] != "Artikel noch nicht zugewiesen") {
+                $manufacturersData[$rowData['external_id']] = $rowData['cat_manufacturer'];
             }
 
-            if ($manufacturerId == 0) {
-                $this->helper->createManufacturer($this->endpointUrl, $this->userName, $this->apiKey,
-                    json_encode(array('name' => $name, 'image' => ''))
+            if ($rowData['products_category_tree'] != '' && $rowData['products_category_tree'] != "Artikel noch nicht zugewiesen") {
+                $categoriesData[] = array(
+                    'external_id' => $rowData['external_id'],
+                    'products_category_tree' => $rowData['products_category_tree']
                 );
             }
         }
-        unset($manufacturersData);
-        $manufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
-
-        $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
-
-        $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
+        fclose($csvFile);
 
         $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
@@ -133,10 +102,10 @@ class CreateProductsService
                 continue;
             }
 
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
-                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
-                    $rowData['external_id'][$i] = '_';
-                }
+            $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
+
+            if (!isset($manufacturersData[$rowData['external_id']])) {
+                $manufacturersData[$rowData['external_id']] = trim(explode('=>', $rowData['products_category_tree'])[0]);
             }
 
             $categoriesData[] =  array(
@@ -146,6 +115,39 @@ class CreateProductsService
         }
         fclose($csvFile);
 
+
+        $manufacturers = array_unique($manufacturersData);
+        $existingManufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
+        foreach ($manufacturers as $name) {
+            $manufacturerId = 0;
+            foreach ($existingManufacturers as $manufacturer){
+                if ($name == $manufacturer->name){
+                    $manufacturerId = $manufacturer->id;
+                    break;
+                }
+            }
+
+            if ($manufacturerId == 0) {
+                $this->helper->createManufacturer($this->endpointUrl, $this->userName, $this->apiKey,
+                    json_encode(array('name' => $name, 'image' => ''))
+                );
+            }
+        }
+        unset($existingManufacturers);
+
+        $manufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
+        foreach ($manufacturersData as $key => $name) {
+            foreach ($manufacturers as $manufacturer) {
+                if ($name == $manufacturer->name){
+                    $manufacturersData[$key] = $manufacturer->id;
+                    break;
+                }
+            }
+        }
+        unset($manufacturers);
+
+
+        $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
         $productCategories = [];
         foreach ($categoriesData as $categoryData) {
             $categoryTree = explode('=>', $categoryData['products_category_tree']);
@@ -160,19 +162,17 @@ class CreateProductsService
         unset($categoriesTrees);
         unset($categoriesData);
 
+
+        $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
         $productsCount = count($productsData);
         $createdProductsCount = 0;
         foreach($productsData as $product) {
-            $manufacturerId = 0;
-            foreach ($manufacturers as $manufacturer) {
-                if ($product['cat_manufacturer'] == $manufacturer->name){
-                    $manufacturerId = $manufacturer->id;
-                    break;
-                }
+            if (!isset($manufacturersData[$product['external_id']])) {
+                echo 'Product with external ID = ' . $product['external_id'] . " has wrong manufacturer\n";
+                continue;
             }
-
-            if ($manufacturerId == 0 || !isset($productCategories[$product['external_id']])) {
-                echo 'Product with External ID = ' . $product['external_id'] . " has wrong manufacturer or category\n";
+            if (!isset($productCategories[$product['external_id']])) {
+                echo 'Product with external ID = ' . $product['external_id'] . " has wrong category\n";
                 continue;
             }
 
@@ -203,7 +203,7 @@ class CreateProductsService
                 'name' => $product['products_name'],
                 'taxId' => $product['products_tax_class_id'],
                 'tax' => $product['products_tax_percent'],
-                'supplierId' => $manufacturerId,
+                'supplierId' => $manufacturersData[$product['external_id']],
                 'descriptionLong' => $product['products_description'],
                 'active' => true,
                 'categories' => $productCategories[$product['external_id']],

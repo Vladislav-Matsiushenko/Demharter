@@ -42,25 +42,9 @@ class CreateCategoriesService
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
-            if (!$rowData['products_name']){
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
-                continue;
-            }
-
             if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
                 echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
                 continue;
-            }
-
-            if (strlen($rowData['external_id']) < 4){
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
-                continue;
-            }
-
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
-                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
-                    $rowData['external_id'][$i] = '_';
-                }
             }
 
             $categoriesData[] =  $this->categoryName . ' => ' . $rowData['products_category_tree'];
@@ -74,17 +58,6 @@ class CreateCategoriesService
             if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
                 echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
                 continue;
-            }
-
-            if (strlen($rowData['external_id']) < 4){
-                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
-                continue;
-            }
-
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
-                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
-                    $rowData['external_id'][$i] = '_';
-                }
             }
 
             $categoriesData[] =  $this->categoryName . ' => ' . $rowData['products_category_tree'];

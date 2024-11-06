@@ -168,4 +168,15 @@ class Helper
 
         return $categoryIds;
     }
+
+    public function fixExternalId($id): string
+    {
+        for ($i = 0; $i < strlen($id); $i++){
+            if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $id[$i])){
+                $id[$i] = '_';
+            }
+        }
+
+        return $id;
+    }
 }

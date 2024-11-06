@@ -58,52 +58,6 @@ class CreateTechPartsService
                 continue;
             }
 
-            if (strlen($rowData['external_id']) < 4){
-                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
-                continue;
-            }
-
-            if ($rowData['position_x'] == '' || $rowData['position_y'] == '') {
-                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no coords\n";
-                continue;
-            }
-
-            if ($rowData['cat_article_component_image'] == '') {
-                echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no image\n";
-                continue;
-            }
-
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++){
-                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
-                    $rowData['external_id'][$i] = '_';
-                }
-            }
-
-            $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
-            if (!$productDetails) {
-                echo 'Product with External ID = ' . $rowData['external_id'] . " does not exist\n";
-                continue;
-            }
-
-            if (!isset($imageSizes[$rowData['cat_article_component_image']])) {
-                $imageSize = @getimagesize($rowData['cat_article_component_image_link']);
-                if ($imageSize === false) {
-                    $imageSizes[$rowData['cat_article_component_image']] = false;
-
-                    echo 'Image ' . $rowData['cat_article_component_image_link'] . " has wrong link\n";
-                    continue;
-                } else {
-                    $imageSizes[$rowData['cat_article_component_image']] = $imageSize[0] . ';' . $imageSize[1];
-
-                    if (!file_exists($this->imagesFilePath . $rowData['cat_article_component_image'])) {
-                        $fileContent = file_get_contents($rowData['cat_article_component_image_link']);
-                        file_put_contents($this->imagesFilePath . $rowData['cat_article_component_image'], $fileContent);
-                    }
-                }
-            } elseif ($imageSizes[$rowData['cat_article_component_image']] === false) {
-                continue;
-            }
-
             $categoryTree = explode('=>', $rowData['products_category_tree']);
             $categoryTree = array_map('trim', $categoryTree);
             $categoryTree = implode(' => ', $categoryTree);
@@ -114,29 +68,59 @@ class CreateTechPartsService
                 continue;
             }
 
-            if (!isset($categoriesInsertData[$categoryId])) {
-                $categoriesInsertData[$categoryId] = "('"
-                    . $rowData['cat_article_component_image'] . "', '"
-                    . $imageSizes[$rowData['cat_article_component_image']] . "', "
-                    . $categoryId . ")";
+            if ($rowData['cat_article_component_image'] != '') {
+                if (!isset($imageSizes[$rowData['cat_article_component_image']])) {
+                    $imageSize = @getimagesize($rowData['cat_article_component_image_link']);
+                    if ($imageSize === false) {
+                        $imageSizes[$rowData['cat_article_component_image']] = false;
+
+                        echo 'Image ' . $rowData['cat_article_component_image_link'] . " has wrong link\n";
+                    } else {
+                        $imageSizes[$rowData['cat_article_component_image']] = $imageSize[0] . ';' . $imageSize[1];
+
+                        if (!file_exists($this->imagesFilePath . $rowData['cat_article_component_image'])) {
+                            $fileContent = file_get_contents($rowData['cat_article_component_image_link']);
+                            file_put_contents($this->imagesFilePath . $rowData['cat_article_component_image'], $fileContent);
+                        }
+                    }
+                }
+
+                if ($imageSizes[$rowData['cat_article_component_image']] !== false) {
+                    if (!isset($categoriesInsertData[$categoryId])) {
+                        $categoriesInsertData[$categoryId] = "('"
+                            . $rowData['cat_article_component_image'] . "', '"
+                            . $imageSizes[$rowData['cat_article_component_image']] . "', "
+                            . $categoryId . ")";
+                    }
+                }
             }
 
-            Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
-                . $categoryId . ", '"
-                . $rowData['position_x'] . ';' . $rowData['position_y'] . "')");
+            if ($rowData['position_x'] != '' && $rowData['position_y'] != '') {
+                if (strlen($rowData['external_id']) < 4) {
+                    $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
+                    $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
+                    if ($productDetails) {
+                        Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
+                            . $categoryId . ", '"
+                            . $rowData['position_x'] . ';' . $rowData['position_y'] . "')");
 
-            $hotspotId = 0;
-            $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $categoryId
-                . " AND coords = '" . $rowData['position_x'] . ';' . $rowData['position_y'] . "'");
-            foreach ($result as $row) {
-                $hotspotId = $row['id'];
-            }
+                        $hotspotId = 0;
+                        $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $categoryId
+                            . " AND coords = '" . $rowData['position_x'] . ';' . $rowData['position_y'] . "'");
+                        foreach ($result as $row) {
+                            $hotspotId = $row['id'];
+                        }
 
-            if (!isset($hotspotsInsertData[$hotspotId])) {
-                $hotspotsInsertData[$hotspotId] = "("
-                    . $hotspotId . ", "
-                    . $productDetails->getArticleID() . ", "
-                    . $productDetails->getId() . ", 1)";
+                        if (!isset($hotspotsInsertData[$hotspotId])) {
+                            $hotspotsInsertData[$hotspotId] = "("
+                                . $hotspotId . ", "
+                                . $productDetails->getArticleID() . ", "
+                                . $productDetails->getId() . ", 1)";
+                        }
+                    } else {
+                        echo 'Product with external ID = ' . $rowData['external_id'] . " does not exist\n";
+                    }
+                }
             }
 
            $createdTechPartsCount++;
