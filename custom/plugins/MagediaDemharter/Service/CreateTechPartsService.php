@@ -7,20 +7,18 @@ class CreateTechPartsService
 // Local
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $imagesFilePath = '/var/www/quad-ersatzteile.loc/media/image/pkExplosionChart/';
-    private $endpointUrl = 'http://quad-ersatzteile.loc/api';
+    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/CategoriesTrees.txt';
 
 // Staging
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/staging/media/image/pkExplosionChart/';
-//    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/CategoriesTrees.txt';
 
 // Live
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/media/image/pkExplosionChart/';
-//    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/CategoriesTrees.txt';
     private $categoryName = 'Quad/Scooter spare parts';
-    private $userName = 'schwab';
-    private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;
     private $modelManager;
     private $dbalConnection;
@@ -43,8 +41,7 @@ class CreateTechPartsService
         Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN (SELECT articleID FROM s_articles_categories WHERE categoryID IN ('" . implode("','", $categoryIds) . "'))");
         unset($categoryIds);
 
-        $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
-
+        $categoriesTrees = json_decode(file_get_contents($this->categoriesTreesFilePath), true);
         $imageSizes = [];
         $categoriesInsertData = [];
         $hotspotsInsertData = [];
@@ -96,7 +93,7 @@ class CreateTechPartsService
             }
 
             if ($rowData['position_x'] != '' && $rowData['position_y'] != '') {
-                if (strlen($rowData['external_id']) < 4) {
+                if (strlen($rowData['external_id']) >= 4) {
                     $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
                     $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
                     if ($productDetails) {

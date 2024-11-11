@@ -9,19 +9,21 @@ class CreateProductsService
     private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
+    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/CategoriesTrees.txt';
 
 // Staging
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/EbayPrices.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/CategoriesTrees.txt';
 
 // Live
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/EbayPrices.txt';
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
-    private $categoryName = 'Quad/Scooter spare parts';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/CategoriesTrees.txt';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;
@@ -47,6 +49,11 @@ class CreateProductsService
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
+            if ($rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
+                continue;
+            }
+
             if (!$rowData['products_name']) {
                 echo 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
                 continue;
@@ -59,12 +66,11 @@ class CreateProductsService
 
             $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
             if ($this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']])) {
-                echo 'Product with ID = '.$rowData['products_id'] . " already exists\n";
+                echo 'Product with ID = ' . $rowData['products_id'] . " already exists\n";
                 continue;
             }
 
-            $productsData[] = array(
-                'external_id' => $rowData['external_id'],
+            $productsData[$rowData['external_id']] = array(
                 'products_weight' => $rowData['products_weight'],
                 'products_image_1' => $rowData['products_image_1'],
                 'products_tax_class_id' => $rowData['products_tax_class_id'],
@@ -75,11 +81,9 @@ class CreateProductsService
                 'stock_count' => $rowData['stock_count'],
             );
 
-            if ($rowData['cat_manufacturer'] != '' && $rowData['cat_manufacturer'] != "Artikel noch nicht zugewiesen") {
+            if ($rowData['products_category_tree'] != '') {
                 $manufacturersData[$rowData['external_id']] = $rowData['cat_manufacturer'];
-            }
 
-            if ($rowData['products_category_tree'] != '' && $rowData['products_category_tree'] != "Artikel noch nicht zugewiesen") {
                 $categoriesData[] = array(
                     'external_id' => $rowData['external_id'],
                     'products_category_tree' => $rowData['products_category_tree']
@@ -103,6 +107,10 @@ class CreateProductsService
             }
 
             $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
+
+            if (!isset($productsData[$rowData['external_id']])) {
+                continue;
+            }
 
             if (!isset($manufacturersData[$rowData['external_id']])) {
                 $manufacturersData[$rowData['external_id']] = trim(explode('=>', $rowData['products_category_tree'])[0]);
@@ -147,7 +155,7 @@ class CreateProductsService
         unset($manufacturers);
 
 
-        $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
+        $categoriesTrees = json_decode(file_get_contents($this->categoriesTreesFilePath), true);
         $productCategories = [];
         foreach ($categoriesData as $categoryData) {
             $categoryTree = explode('=>', $categoryData['products_category_tree']);
@@ -166,13 +174,13 @@ class CreateProductsService
         $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
         $productsCount = count($productsData);
         $createdProductsCount = 0;
-        foreach($productsData as $product) {
-            if (!isset($manufacturersData[$product['external_id']])) {
-                echo 'Product with external ID = ' . $product['external_id'] . " has wrong manufacturer\n";
+        foreach($productsData as $productNumber => $product) {
+            if (!isset($productCategories[$productNumber])) {
+                echo 'Product with external ID = ' . $productNumber . " has wrong category\n";
                 continue;
             }
-            if (!isset($productCategories[$product['external_id']])) {
-                echo 'Product with external ID = ' . $product['external_id'] . " has wrong category\n";
+            if (!isset($manufacturersData[$productNumber])) {
+                echo 'Product with external ID = ' . $productNumber . " has wrong manufacturer\n";
                 continue;
             }
 
@@ -191,10 +199,10 @@ class CreateProductsService
             );
 
             $ebayPrice = null;
-            if (isset($ebayPrices[$product['external_id']])) {
+            if (isset($ebayPrices[$productNumber])) {
                 $ebayPrice['customerGroupKey'] = 'Ebay';
-                $ebayPrice['pseudoprice'] = $ebayPrices[$product['external_id']]['pseudoprice'];
-                $ebayPrice['percent'] = $ebayPrices[$product['external_id']]['percent'];
+                $ebayPrice['pseudoprice'] = $ebayPrices[$productNumber]['pseudoprice'];
+                $ebayPrice['percent'] = $ebayPrices[$productNumber]['percent'];
 
                 $prices[] = $ebayPrice;
             }
@@ -203,12 +211,12 @@ class CreateProductsService
                 'name' => $product['products_name'],
                 'taxId' => $product['products_tax_class_id'],
                 'tax' => $product['products_tax_percent'],
-                'supplierId' => $manufacturersData[$product['external_id']],
+                'supplierId' => $manufacturersData[$productNumber],
                 'descriptionLong' => $product['products_description'],
                 'active' => true,
-                'categories' => $productCategories[$product['external_id']],
+                'categories' => $productCategories[$productNumber],
                 'mainDetail' => array(
-                    'number' => $product['external_id'],
+                    'number' => $productNumber,
                     'inStock' => $product['stock_count'],
                     'weight' => $product['products_weight'],
                     'active' => true,
@@ -224,13 +232,13 @@ class CreateProductsService
             );
 
             if (!json_decode($response)) {
-                echo 'Product with External ID = ' . $product['external_id'] . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
+                echo 'Product with External ID = ' . $productNumber . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
             } else {
                 if ($ebayPrice) {
                     Shopware()->Db()->query("UPDATE s_articles_prices SET price = "
-                        . $ebayPrices[$product['external_id']]['price']
+                        . $ebayPrices[$productNumber]['price']
                         . " WHERE pricegroup = 'Ebay' AND articleID = (SELECT articleID FROM s_articles_details WHERE ordernumber = '"
-                        . $product['external_id'] . "')");
+                        . $productNumber . "')");
                 }
             }
 

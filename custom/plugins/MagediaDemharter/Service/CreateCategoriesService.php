@@ -8,16 +8,19 @@ class CreateCategoriesService
     private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
+    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/CategoriesTrees.txt';
 
 // Staging
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/CategoriesTrees.txt';
 
 // Live
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/CategoriesTrees.txt';
     private $categoryName = 'Quad/Scooter spare parts';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
@@ -64,6 +67,7 @@ class CreateCategoriesService
         }
         fclose($csvFile);
         $categoriesData = array_unique($categoriesData);
+        asort($categoriesData);
 
         $categories = $this->helper->getCategories($this->endpointUrl, $this->userName, $this->apiKey);
         $categoriesCount = count($categoriesData);
@@ -108,6 +112,11 @@ class CreateCategoriesService
                 echo 'Created ' . $createdCategoriesCount . ' categories. ' . ($categoriesCount - $createdCategoriesCount) . " left\n";
             }
         }
+        unset($categories);
+        unset($categoriesData);
+
+        $categoriesTrees = $this->helper->getCategoriesTrees($this->endpointUrl, $this->userName, $this->apiKey, $this->categoryName);
+        file_put_contents($this->categoriesTreesFilePath, json_encode($categoriesTrees));
 
         $executionTime = (microtime(true) - $startTime);
         echo 'Creating categories completed in ' . $executionTime . " seconds\n";
