@@ -55,5 +55,10 @@
             <tag name="console.command" command="demharter:delete_tech_parts_products_categories"/>
             <argument type="service" id="magedia_demharter.delete_tech_parts_products_categories_service"/>
         </service>
+
+        <service id="magedia_demharter.subscriber.product_subscriber" class="MagediaDemharter\Subscriber\ProductSubscriber">
+            <tag name="shopware.event_subscriber" />
+            <argument type="service" id="models" />
+        </service>
     </services>
 </container>
