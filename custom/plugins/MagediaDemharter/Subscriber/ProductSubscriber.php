@@ -10,6 +10,15 @@ class ProductSubscriber implements SubscriberInterface
 {
     const MANUFACTURER_DESCRIPTION = '<DIV><FONT size=2 face=Tahoma></FONT>&nbsp;</DIV><DIV><FONT size=2 face=Tahoma>Informationen zur Produktsicherheit:</FONT></DIV><DIV><FONT size=2 face=Tahoma></FONT>&nbsp;</DIV><DIV><FONT size=2 face=Tahoma>Hersteller/EU-Verantwortlicher:</FONT></DIV><DIV><FONT size=2 face=Tahoma>Quad Stadel Schwab GmbH</FONT></DIV><DIV><FONT size=2 face=Tahoma>Im Herrmannshof 5</FONT></DIV><DIV><FONT size=2 face=Tahoma>91595 Burgoberbach</FONT></DIV><DIV><FONT size=2 face=Tahoma>Telefon: +0049 09805/932550</FONT></DIV>';
 
+// Local
+    private $isActiveFilePath = '/var/www/quad-ersatzteile.loc/isActiveProductSubscriber.txt';
+
+// Staging
+//    private $isActiveFilePath = '/usr/home/mipzhm/public_html/staging/isActiveProductSubscriber.txt';
+
+// Live
+//    private $isActiveFilePath = '/usr/home/mipzhm/public_html/isActiveProductSubscriber.txt';
+
     /**
      * @var EntityManager
      */
@@ -29,6 +38,11 @@ class ProductSubscriber implements SubscriberInterface
 
     public function onProductCreate(\Enlight_Event_EventArgs $args)
     {
+        $isActive = file_get_contents($this->isActiveFilePath);
+        if (!$isActive) {
+            return;
+        }
+
         $entity = $args->getEntity();
 
         if ($entity instanceof Article) {
@@ -38,5 +52,10 @@ class ProductSubscriber implements SubscriberInterface
             $this->entityManager->persist($entity);
             $this->entityManager->flush();
         }
+    }
+
+    public function setIsActive(bool $isActive)
+    {
+        file_put_contents($this->isActiveFilePath, $isActive);
     }
 }

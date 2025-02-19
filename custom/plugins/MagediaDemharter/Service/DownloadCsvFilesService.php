@@ -15,7 +15,7 @@ class DownloadCsvFilesService
 // Live
 //    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
-    private $productsDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/b06c2426688d447a44d22e6c13e1ed6e_file/Teileexport-grp-3.csv';
+    private $productsDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/c351df7cf04b705dedc109004e39aac0_file/Teileexport-grp-3.csv';
     private $techPartsDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/e1d6bb2bf5293105f019865e9904d969_file/cat_data.csv';
 
     public function execute($filesNumber = null)

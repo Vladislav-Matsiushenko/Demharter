@@ -2,6 +2,8 @@
 
 namespace MagediaDemharter\Service;
 
+use MagediaDemharter\Subscriber\ProductSubscriber;
+
 class CreateProductsService
 {
 // Local
@@ -29,18 +31,22 @@ class CreateProductsService
     private $helper;
     private $modelManager;
     private $dbalConnection;
+    private $productSubscriber;
 
-    public function __construct()
+    public function __construct(ProductSubscriber $productSubscriber)
     {
         $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
         $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
+        $this->productSubscriber = $productSubscriber;
     }
 
     public function execute()
     {
         $startTime = microtime(true);
+
+        $this->productSubscriber->setIsActive(false);
 
         $productsData = [];
         $manufacturersData = [];
@@ -212,7 +218,7 @@ class CreateProductsService
                 'taxId' => $product['products_tax_class_id'],
                 'tax' => $product['products_tax_percent'],
                 'supplierId' => $manufacturersData[$productNumber],
-                'descriptionLong' => $product['products_description'],
+                'descriptionLong' => $product['products_description'] . ProductSubscriber::MANUFACTURER_DESCRIPTION,
                 'active' => true,
                 'categories' => $productCategories[$productNumber],
                 'mainDetail' => array(
@@ -232,7 +238,7 @@ class CreateProductsService
             );
 
             if (!json_decode($response)) {
-                echo 'Product with External ID = ' . $productNumber . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
+                echo 'Product with external ID = ' . $productNumber . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
             } else {
                 if ($ebayPrice) {
                     Shopware()->Db()->query("UPDATE s_articles_prices SET price = "
@@ -247,6 +253,7 @@ class CreateProductsService
                 echo 'Created ' . $createdProductsCount . ' products. ' . ($productsCount - $createdProductsCount) . " left\n";
             }
         }
+        $this->productSubscriber->setIsActive(true);
 
         $executionTime = (microtime(true) - $startTime);
         echo 'Creating products completed in ' . $executionTime . " seconds\n";
