@@ -5,22 +5,22 @@ namespace MagediaDemharter\Service;
 class CreateCategoriesService
 {
 // Local
-    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
-    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
+    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductsData.csv';
+    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/TechPartsData.csv';
+    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/CategoriesTrees.txt';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
-    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/CategoriesTrees.txt';
 
 // Staging
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/TechPartsData.csv';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/CategoriesTrees.txt';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/CategoriesTrees.txt';
 
 // Live
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/TechPartsData.csv';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/files/demharter/CategoriesTrees.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/CategoriesTrees.txt';
     private $categoryName = 'Quad/Scooter spare parts';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';

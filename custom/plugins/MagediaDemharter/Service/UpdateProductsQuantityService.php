@@ -5,13 +5,13 @@ namespace MagediaDemharter\Service;
 class UpdateProductsQuantityService
 {
 // Local
-    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
+    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductsData.csv';
 
 // Staging
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductsData.csv';
 
 // Live
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductsData.csv';
     private $modelManager;
     private $dbalConnection;
 

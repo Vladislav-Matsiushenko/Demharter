@@ -5,19 +5,19 @@ namespace MagediaDemharter\Service;
 class CreateTechPartsService
 {
 // Local
-    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
+    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/TechPartsData.csv';
+    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/CategoriesTrees.txt';
     private $imagesFilePath = '/var/www/quad-ersatzteile.loc/media/image/pkExplosionChart/';
-    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/CategoriesTrees.txt';
 
 // Staging
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/TechPartsData.csv';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/CategoriesTrees.txt';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/staging/media/image/pkExplosionChart/';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/CategoriesTrees.txt';
 
 // Live
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/TechPartsData.csv';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/files/demharter/CategoriesTrees.txt';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/media/image/pkExplosionChart/';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/CategoriesTrees.txt';
     private $categoryName = 'Quad/Scooter spare parts';
     private $helper;
     private $modelManager;

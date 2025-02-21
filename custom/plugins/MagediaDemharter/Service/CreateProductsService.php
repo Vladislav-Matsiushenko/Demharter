@@ -7,25 +7,25 @@ use MagediaDemharter\Subscriber\ProductSubscriber;
 class CreateProductsService
 {
 // Local
-    private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/EbayPrices.txt';
-    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/ProductsData.csv';
-    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/TechPartsData.csv';
+    private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/EbayPrices.txt';
+    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductsData.csv';
+    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/TechPartsData.csv';
+    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/CategoriesTrees.txt';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
-    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/CategoriesTrees.txt';
 
 // Staging
-//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/EbayPrices.txt';
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/TechPartsData.csv';
+//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/EbayPrices.txt';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/TechPartsData.csv';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/CategoriesTrees.txt';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/CategoriesTrees.txt';
 
 // Live
-//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/EbayPrices.txt';
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/TechPartsData.csv';
+//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/files/demharter/EbayPrices.txt';
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductsData.csv';
+//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/TechPartsData.csv';
+//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/files/demharter/CategoriesTrees.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/CategoriesTrees.txt';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;

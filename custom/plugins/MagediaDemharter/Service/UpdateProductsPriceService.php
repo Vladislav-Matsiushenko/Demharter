@@ -8,23 +8,23 @@ class UpdateProductsPriceService
 
 // Local
     private $productsDataCsvFilePaths = [
-        '/var/www/quad-ersatzteile.loc/AtvDlrEuropeEUROAllXLS.csv',
-        '/var/www/quad-ersatzteile.loc/RdstrDlrEuropeEUROAllXLS.csv',
-        '/var/www/quad-ersatzteile.loc/SSVDlrEuropeEUROAllXLS.csv',
+        '/var/www/quad-ersatzteile.loc/files/demharter/AtvDlrEuropeEUROAllXLS.csv',
+        '/var/www/quad-ersatzteile.loc/files/demharter/RdstrDlrEuropeEUROAllXLS.csv',
+        '/var/www/quad-ersatzteile.loc/files/demharter/SSVDlrEuropeEUROAllXLS.csv',
     ];
 
 // Staging
 //    private $productsDataCsvFilePaths = [
-//        '/usr/home/mipzhm/public_html/staging/AtvDlrEuropeEUROAllXLS.csv',
-//        '/usr/home/mipzhm/public_html/staging/RdstrDlrEuropeEUROAllXLS.csv',
-//        '/usr/home/mipzhm/public_html/staging/SSVDlrEuropeEUROAllXLS.csv',
+//        '/usr/home/mipzhm/public_html/staging/files/demharter/AtvDlrEuropeEUROAllXLS.csv',
+//        '/usr/home/mipzhm/public_html/staging/files/demharter/RdstrDlrEuropeEUROAllXLS.csv',
+//        '/usr/home/mipzhm/public_html/staging/files/demharter/SSVDlrEuropeEUROAllXLS.csv',
 //    ];
 
 // Live
 //    private $productsDataCsvFilePaths = [
-//        '/usr/home/mipzhm/public_html/AtvDlrEuropeEUROAllXLS.csv',
-//        '/usr/home/mipzhm/public_html/RdstrDlrEuropeEUROAllXLS.csv',
-//        '/usr/home/mipzhm/public_html/SSVDlrEuropeEUROAllXLS.csv',
+//        '/usr/home/mipzhm/public_html/files/demharter/AtvDlrEuropeEUROAllXLS.csv',
+//        '/usr/home/mipzhm/public_html/files/demharter/RdstrDlrEuropeEUROAllXLS.csv',
+//        '/usr/home/mipzhm/public_html/files/demharter/SSVDlrEuropeEUROAllXLS.csv',
 //    ];
     private $modelManager;
     private $dbalConnection;

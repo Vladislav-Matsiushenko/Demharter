@@ -5,15 +5,15 @@ namespace MagediaDemharter\Service;
 class DeleteTechPartsProductsCategoriesService
 {
 // Local
-    private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/EbayPrices.txt';
+    private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/EbayPrices.txt';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
-//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/EbayPrices.txt';
+//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/EbayPrices.txt';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
-//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/EbayPrices.txt';
+//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/files/demharter/EbayPrices.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $categoryName = 'Quad/Scooter spare parts';
     private $userName = 'schwab';
