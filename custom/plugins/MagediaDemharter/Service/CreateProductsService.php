@@ -220,6 +220,7 @@ class CreateProductsService
                 'supplierId' => $manufacturersData[$productNumber],
                 'descriptionLong' => $product['products_description'] . ProductSubscriber::MANUFACTURER_DESCRIPTION,
                 'active' => true,
+                'notification' => true,
                 'categories' => $productCategories[$productNumber],
                 'mainDetail' => array(
                     'number' => $productNumber,
