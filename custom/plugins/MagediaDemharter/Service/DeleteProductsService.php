@@ -83,6 +83,7 @@ class DeleteProductsService
             );
         }
 
+        Shopware()->Db()->query("DELETE FROM s_articles_details WHERE ordernumber IN ('" . implode("','", $orderNumbers) . "')");
         Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN ('" . implode("','", $productIdsForTechParts) . "')");
 
         $executionTime = (microtime(true) - $startTime);
