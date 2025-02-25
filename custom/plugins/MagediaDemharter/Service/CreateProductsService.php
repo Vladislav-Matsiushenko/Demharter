@@ -87,7 +87,7 @@ class CreateProductsService
                 'stock_count' => $rowData['stock_count'],
             );
 
-            if ($rowData['products_category_tree'] != '') {
+            if (trim($rowData['products_category_tree']) != '') {
                 $manufacturersData[$rowData['external_id']] = $rowData['cat_manufacturer'];
 
                 $categoriesData[] = array(

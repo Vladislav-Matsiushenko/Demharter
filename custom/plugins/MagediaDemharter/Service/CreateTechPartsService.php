@@ -5,16 +5,19 @@ namespace MagediaDemharter\Service;
 class CreateTechPartsService
 {
 // Local
+    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductsData.csv';
     private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/TechPartsData.csv';
     private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/CategoriesTrees.txt';
     private $imagesFilePath = '/var/www/quad-ersatzteile.loc/media/image/pkExplosionChart/';
 
 // Staging
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/TechPartsData.csv';
 //    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/CategoriesTrees.txt';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/staging/media/image/pkExplosionChart/';
 
 // Live
+//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductsData.csv';
 //    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/TechPartsData.csv';
 //    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/files/demharter/CategoriesTrees.txt';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/media/image/pkExplosionChart/';
@@ -46,86 +49,95 @@ class CreateTechPartsService
         $categoriesInsertData = [];
         $hotspotsInsertData = [];
         $createdTechPartsCount = 0;
-        $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
-        $headers = fgetcsv($csvFile, 0, ';');
-        while ($row = fgetcsv($csvFile, 0, ';')) {
-            $rowData = array_combine($headers, $row);
-            if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
-                continue;
-            }
+        $filePath = $this->techPartsDataCsvFilePath;
+        while ($filePath) {
+            $csvFile = fopen($filePath, 'r');
+            $headers = fgetcsv($csvFile, 0, ';');
+            while ($row = fgetcsv($csvFile, 0, ';')) {
+                $rowData = array_combine($headers, $row);
+                if (trim($rowData['products_category_tree']) == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
+                    echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
+                    continue;
+                }
 
-            $categoryTree = explode('=>', $rowData['products_category_tree']);
-            $categoryTree = array_map('trim', $categoryTree);
-            $categoryTree = implode(' => ', $categoryTree);
+                $categoryTree = explode('=>', $rowData['products_category_tree']);
+                $categoryTree = array_map('trim', $categoryTree);
+                $categoryTree = implode(' => ', $categoryTree);
 
-            $categoryId = array_search($categoryTree, $categoriesTrees);
-            if ($categoryId === false) {
-                echo 'Category ' . $rowData['products_category_tree'] . " does not exist\n";
-                continue;
-            }
+                $categoryId = array_search($categoryTree, $categoriesTrees);
+                if ($categoryId === false) {
+                    echo 'Category ' . $rowData['products_category_tree'] . " does not exist\n";
+                    continue;
+                }
 
-            if ($rowData['cat_article_component_image'] != '') {
-                if (!isset($imageSizes[$rowData['cat_article_component_image']])) {
-                    $imageSize = @getimagesize($rowData['cat_article_component_image_link']);
-                    if ($imageSize === false) {
-                        $imageSizes[$rowData['cat_article_component_image']] = false;
+                if (trim($rowData['cat_article_component_image']) != '') {
+                    if (!isset($imageSizes[$rowData['cat_article_component_image']])) {
+                        $imageSize = @getimagesize($rowData['cat_article_component_image_link']);
+                        if ($imageSize === false) {
+                            $imageSizes[$rowData['cat_article_component_image']] = false;
 
-                        echo 'Image ' . $rowData['cat_article_component_image_link'] . " has wrong link\n";
-                    } else {
-                        $imageSizes[$rowData['cat_article_component_image']] = $imageSize[0] . ';' . $imageSize[1];
+                            echo 'Image ' . $rowData['cat_article_component_image_link'] . " has wrong link\n";
+                        } else {
+                            $imageSizes[$rowData['cat_article_component_image']] = $imageSize[0] . ';' . $imageSize[1];
 
-                        if (!file_exists($this->imagesFilePath . $rowData['cat_article_component_image'])) {
-                            $fileContent = file_get_contents($rowData['cat_article_component_image_link']);
-                            file_put_contents($this->imagesFilePath . $rowData['cat_article_component_image'], $fileContent);
+                            if (!file_exists($this->imagesFilePath . $rowData['cat_article_component_image'])) {
+                                $fileContent = file_get_contents($rowData['cat_article_component_image_link']);
+                                file_put_contents($this->imagesFilePath . $rowData['cat_article_component_image'], $fileContent);
+                            }
+                        }
+                    }
+
+                    if ($imageSizes[$rowData['cat_article_component_image']] !== false) {
+                        if (!isset($categoriesInsertData[$categoryId])) {
+                            $categoriesInsertData[$categoryId] = "('"
+                                . $rowData['cat_article_component_image'] . "', '"
+                                . $imageSizes[$rowData['cat_article_component_image']] . "', "
+                                . $categoryId . ")";
                         }
                     }
                 }
 
-                if ($imageSizes[$rowData['cat_article_component_image']] !== false) {
-                    if (!isset($categoriesInsertData[$categoryId])) {
-                        $categoriesInsertData[$categoryId] = "('"
-                            . $rowData['cat_article_component_image'] . "', '"
-                            . $imageSizes[$rowData['cat_article_component_image']] . "', "
-                            . $categoryId . ")";
+                if (trim($rowData['position_x']) != '' && trim($rowData['position_y']) != '') {
+                    if (strlen($rowData['external_id']) >= 4) {
+                        $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
+                        $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
+                        if ($productDetails) {
+                            Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
+                                . $categoryId . ", '"
+                                . $rowData['position_x'] . ';' . $rowData['position_y'] . "')");
+
+                            $hotspotId = 0;
+                            $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $categoryId
+                                . " AND coords = '" . $rowData['position_x'] . ';' . $rowData['position_y'] . "'");
+                            foreach ($result as $row) {
+                                $hotspotId = $row['id'];
+                            }
+
+                            if ($hotspotId != 0 && !isset($hotspotsInsertData[$hotspotId])) {
+                                $hotspotsInsertData[$hotspotId] = "("
+                                    . $hotspotId . ", "
+                                    . $productDetails->getArticleID() . ", "
+                                    . $productDetails->getId() . ", 1)";
+                            }
+                        } else {
+                            echo 'Product with external ID = ' . $rowData['external_id'] . " does not exist\n";
+                        }
                     }
                 }
-            }
 
-            if ($rowData['position_x'] != '' && $rowData['position_y'] != '') {
-                if (strlen($rowData['external_id']) >= 4) {
-                    $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
-                    $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
-                    if ($productDetails) {
-                        Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
-                            . $categoryId . ", '"
-                            . $rowData['position_x'] . ';' . $rowData['position_y'] . "')");
-
-                        $hotspotId = 0;
-                        $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $categoryId
-                            . " AND coords = '" . $rowData['position_x'] . ';' . $rowData['position_y'] . "'");
-                        foreach ($result as $row) {
-                            $hotspotId = $row['id'];
-                        }
-
-                        if (!isset($hotspotsInsertData[$hotspotId])) {
-                            $hotspotsInsertData[$hotspotId] = "("
-                                . $hotspotId . ", "
-                                . $productDetails->getArticleID() . ", "
-                                . $productDetails->getId() . ", 1)";
-                        }
-                    } else {
-                        echo 'Product with external ID = ' . $rowData['external_id'] . " does not exist\n";
-                    }
+                $createdTechPartsCount++;
+                if ($createdTechPartsCount % 1000 == 0) {
+                    echo 'Created ' . $createdTechPartsCount . " tech parts\n";
                 }
             }
+            fclose($csvFile);
 
-           $createdTechPartsCount++;
-            if ($createdTechPartsCount % 1000 == 0) {
-                echo 'Created ' . $createdTechPartsCount . " tech parts\n";
+            if ($filePath == $this->techPartsDataCsvFilePath) {
+                $filePath = $this->productsDataCsvFilePath;
+            } else {
+                $filePath = null;
             }
         }
-        fclose($csvFile);
         unset($imageSizes);
         unset($categoriesTrees);
 
