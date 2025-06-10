@@ -5,42 +5,57 @@ namespace MagediaDemharter\Service;
 class DownloadCsvFilesService
 {
 // Local
-    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductsData.csv';
-    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/TechPartsData.csv';
+    private $productDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductData.csv';
+    private $categoryDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/CategoryData.csv';
+    private $hotspotDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/HotspotData.csv';
 
 // Staging
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/TechPartsData.csv';
+//    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductData.csv';
+//    private $categoryDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/CategoryData.csv';
+//    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/HotspotData.csv';
 
 // Live
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/TechPartsData.csv';
-    private $productsDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/c351df7cf04b705dedc109004e39aac0_file/Teileexport-grp-3.csv';
-    private $techPartsDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/e1d6bb2bf5293105f019865e9904d969_file/cat_data.csv';
+//    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductData.csv';
+//    private $categoryDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/CategoryData.csv';
+//    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/HotspotData.csv';
+
+    private $productDataCsvFileUrl = 'https://www.dataparts.eu/media/files_public/c351df7cf04b705dedc109004e39aac0_file/Teileexport-grp-3.csv';
+    private $categoryDataCsvFileUrl = 'https://dataparts.eu/export/LK3YrGPFzsoSnCFMpfc3sO5e/category_custom_export.csv';
+    private $hotspotDataCsvFileUrl = 'https://dataparts.eu/export/LK3YrGPFzsoSnCFMpfc3sO5e/hotspot_custom_export.csv';
 
     public function execute($filesNumber = null)
     {
         $startTime = microtime(true);
 
-        if (file_exists($this->productsDataCsvFilePath)) {
-            unlink($this->productsDataCsvFilePath);
+        if (file_exists($this->productDataCsvFilePath)) {
+            unlink($this->productDataCsvFilePath);
         }
-        $fileContent = file_get_contents($this->productsDataCsvFileUrl);
-        if ($fileContent !== false && file_put_contents($this->productsDataCsvFilePath, $fileContent) !== false) {
-            echo "ProductsData file was successfully downloaded\n";
+        $fileContent = file_get_contents($this->productDataCsvFileUrl);
+        if ($fileContent !== false && file_put_contents($this->productDataCsvFilePath, $fileContent) !== false) {
+            echo "ProductData file was successfully downloaded\n";
         } else {
-            echo "Error while downloading ProductsData file\n";
+            echo "Error while downloading ProductData file\n";
         }
 
         if ($filesNumber != 1) {
-            if (file_exists($this->techPartsDataCsvFilePath)) {
-                unlink($this->techPartsDataCsvFilePath);
+            if (file_exists($this->categoryDataCsvFilePath)) {
+                unlink($this->categoryDataCsvFilePath);
             }
-            $fileContent = file_get_contents($this->techPartsDataCsvFileUrl);
-            if ($fileContent !== false && file_put_contents($this->techPartsDataCsvFilePath, $fileContent) !== false) {
-                echo "TechPartsData file was successfully downloaded\n";
+            $fileContent = file_get_contents($this->categoryDataCsvFileUrl);
+            if ($fileContent !== false && file_put_contents($this->categoryDataCsvFilePath, $fileContent) !== false) {
+                echo "CategoryData file was successfully downloaded\n";
             } else {
-                echo "Error while downloading TechPartsData file\n";
+                echo "Error while downloading CategoryData file\n";
+            }
+
+            if (file_exists($this->hotspotDataCsvFilePath)) {
+                unlink($this->hotspotDataCsvFilePath);
+            }
+            $fileContent = file_get_contents($this->hotspotDataCsvFileUrl);
+            if ($fileContent !== false && file_put_contents($this->hotspotDataCsvFilePath, $fileContent) !== false) {
+                echo "HotspotData file was successfully downloaded\n";
+            } else {
+                echo "Error while downloading HotspotData file\n";
             }
         }
 
