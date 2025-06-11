@@ -57,11 +57,11 @@
             <argument type="service" id="magedia_demharter.update_products_price_service"/>
         </service>
 
-        <service id="magedia_demharter.delete_tech_parts_products_categories_service" class="MagediaDemharter\Service\DeleteTechPartsProductsCategoriesService">
+        <service id="magedia_demharter.delete_hotspots_products_categories_service" class="MagediaDemharter\Service\DeleteHotspotsProductsCategoriesService">
         </service>
-        <service id="magedia_demharter.commands.delete_tech_parts_products_categories_command" class="MagediaDemharter\Commands\DeleteTechPartsProductsCategoriesCommand">
-            <tag name="console.command" command="demharter:delete_tech_parts_products_categories"/>
-            <argument type="service" id="magedia_demharter.delete_tech_parts_products_categories_service"/>
+        <service id="magedia_demharter.commands.delete_hotspots_products_categories_command" class="MagediaDemharter\Commands\DeleteHotspotsProductsCategoriesCommand">
+            <tag name="console.command" command="demharter:delete_hotspots_products_categories"/>
+            <argument type="service" id="magedia_demharter.delete_hotspots_products_categories_service"/>
         </service>
 
         <service id="magedia_demharter.subscriber.product_subscriber" class="MagediaDemharter\Subscriber\ProductSubscriber">

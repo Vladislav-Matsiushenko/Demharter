@@ -2,7 +2,7 @@
 
 namespace MagediaDemharter\Service;
 
-class DeleteTechPartsProductsCategoriesService
+class DeleteHotspotsProductsCategoriesService
 {
 // Local
     private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/EbayPrices.txt';
@@ -19,15 +19,11 @@ class DeleteTechPartsProductsCategoriesService
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;
-    private $modelManager;
-    private $dbalConnection;
 
     public function __construct()
     {
         $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
-        $this->modelManager = Shopware()->Container()->get('models');
-        $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
     }
 
     public function execute()
@@ -40,7 +36,7 @@ class DeleteTechPartsProductsCategoriesService
         Shopware()->Db()->query("DELETE FROM pk_explosion_chart_hotspots WHERE categoryID IN ('" . implode("','", $categoryIds) . "')");
 
         $productIds = [];
-        $productIdsForTechParts =[];
+        $productIdsForHotspots =[];
         $ebayPrices = [];
         $result = Shopware()->Db()->query("SELECT * FROM s_articles_categories WHERE categoryID IN ('" . implode("','", $categoryIds) . "')");
         foreach ($result as $row) {
@@ -62,7 +58,7 @@ class DeleteTechPartsProductsCategoriesService
             }
 
             $productIds[] = array('id' => $row['articleID']);
-            $productIdsForTechParts[] = $row['articleID'];
+            $productIdsForHotspots[] = $row['articleID'];
 
             if (count($productIds) >= 500) {
                 $this->helper->deleteProduct($this->endpointUrl, $this->userName, $this->apiKey,
@@ -80,10 +76,10 @@ class DeleteTechPartsProductsCategoriesService
 
         file_put_contents($this->ebayPricesFilePath, json_encode($ebayPrices));
 
-        Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN ('" . implode("','", $productIdsForTechParts) . "')");
+        Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN ('" . implode("','", $productIdsForHotspots) . "')");
         Shopware()->Db()->query("DELETE FROM s_categories WHERE id IN ('" . implode("','", $categoryIds) . "')");
 
         $executionTime = (microtime(true) - $startTime);
-        echo 'Deleting tech parts, products and categories completed in ' . $executionTime . " seconds\n";
+        echo 'Deleting hotspots, products and categories completed in ' . $executionTime . " seconds\n";
     }
 }
