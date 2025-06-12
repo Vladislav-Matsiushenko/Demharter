@@ -8,29 +8,31 @@ class CreateProductsService
 {
 // Local
     private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/EbayPrices.txt';
-    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductsData.csv';
-    private $techPartsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/TechPartsData.csv';
-    private $categoriesTreesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/CategoriesTrees.txt';
+    private $productDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductData.csv';
+    private $hotspotDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/HotspotData.csv';
+    private $updatedCategoryDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedCategoryData.txt';
+    private $updatedManufacturerDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedManufactureData.txt';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/EbayPrices.txt';
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/TechPartsData.csv';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/CategoriesTrees.txt';
+//    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductData.csv';
+//    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/HotspotData.csv';
+//    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedCategoryData.txt';
+//    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/files/demharter/EbayPrices.txt';
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductsData.csv';
-//    private $techPartsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/TechPartsData.csv';
-//    private $categoriesTreesFilePath = '/usr/home/mipzhm/public_html/files/demharter/CategoriesTrees.txt';
+//    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductData.csv';
+//    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/HotspotData.csv';
+//    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedCategoryData.txt';
+//    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;
     private $modelManager;
-    private $dbalConnection;
     private $productSubscriber;
 
     public function __construct(ProductSubscriber $productSubscriber)
@@ -38,7 +40,6 @@ class CreateProductsService
         $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
-        $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
         $this->productSubscriber = $productSubscriber;
     }
 
@@ -48,25 +49,19 @@ class CreateProductsService
 
         $this->productSubscriber->setIsActive(false);
 
+        $updatedManufacturersData = json_decode(file_get_contents($this->updatedManufacturerDataFilePath), true);
         $productsData = [];
-        $manufacturersData = [];
-        $categoriesData = [];
-        $csvFile = fopen($this->productsDataCsvFilePath, 'r');
+        $csvFile = fopen($this->productDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
-            if ($rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
+            if ($rowData['products_id'] === '' || strlen($rowData['external_id']) < 4 || $rowData['products_name'] === '' || $rowData['cat_manufacturer'] === '') {
+                echo 'Product with ID = ' . $rowData['products_id'] . " was not created\n";
                 continue;
             }
 
-            if (!$rowData['products_name']) {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
-                continue;
-            }
-
-            if (strlen($rowData['external_id']) < 4) {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
+            if (!isset($updatedManufacturersData[$rowData['cat_manufacturer']])) {
+                echo 'Product with ID = ' . $rowData['products_id'] . " has no manufacturer\n";
                 continue;
             }
 
@@ -76,123 +71,47 @@ class CreateProductsService
                 continue;
             }
 
-            $productsData[$rowData['external_id']] = array(
+            $productsData[$rowData['products_id']] = array(
+                'external_id' => $rowData['external_id'],
                 'products_weight' => $rowData['products_weight'],
                 'products_image_1' => $rowData['products_image_1'],
                 'products_tax_class_id' => $rowData['products_tax_class_id'],
                 'products_tax_percent' => $rowData['products_tax_percent'],
                 'products_name' => $rowData['products_name'],
                 'products_description' => $rowData['products_description'],
+                'cat_manufacturer' => $updatedManufacturersData[$rowData['cat_manufacturer']],
                 'VK_brutto' => $rowData['VK_brutto'],
                 'stock_count' => $rowData['stock_count'],
             );
-
-            if (trim($rowData['products_category_tree']) != '') {
-                $manufacturersData[$rowData['external_id']] = $rowData['cat_manufacturer'];
-
-                $categoriesData[] = array(
-                    'external_id' => $rowData['external_id'],
-                    'products_category_tree' => $rowData['products_category_tree']
-                );
-            }
         }
         fclose($csvFile);
+        unset($updatedManufacturersData);
 
-        $csvFile = fopen($this->techPartsDataCsvFilePath, 'r');
+
+        $updatedCategoriesData = json_decode(file_get_contents($this->updatedCategoryDataFilePath), true);
+        $csvFile = fopen($this->hotspotDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
-            if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                echo 'Category with ID = ' . $rowData['categories_id'] . ' linked with product with ID = ' . $rowData['products_id'] . " has no name\n";
-                continue;
+            if (isset($productsData[$rowData['products_id']]) && isset($updatedCategoriesData[$rowData['categories_id']])) {
+                $productsData[$rowData['products_id']]['categories'][]['id'] = $updatedCategoriesData[$rowData['categories_id']];
             }
-
-            if (strlen($rowData['external_id']) < 4){
-                echo 'Product with ID = ' . $rowData['products_id'] . ' linked with category with ID = ' . $rowData['categories_id'] . " has no external ID\n";
-                continue;
-            }
-
-            $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
-
-            if (!isset($productsData[$rowData['external_id']])) {
-                continue;
-            }
-
-            if (!isset($manufacturersData[$rowData['external_id']])) {
-                $manufacturersData[$rowData['external_id']] = trim(explode('=>', $rowData['products_category_tree'])[0]);
-            }
-
-            $categoriesData[] =  array(
-                'external_id' => $rowData['external_id'],
-                'products_category_tree' => $rowData['products_category_tree']
-            );
         }
         fclose($csvFile);
-
-
-        $manufacturers = array_unique($manufacturersData);
-        $existingManufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
-        foreach ($manufacturers as $name) {
-            $manufacturerId = 0;
-            foreach ($existingManufacturers as $manufacturer){
-                if ($name == $manufacturer->name){
-                    $manufacturerId = $manufacturer->id;
-                    break;
-                }
-            }
-
-            if ($manufacturerId == 0) {
-                $this->helper->createManufacturer($this->endpointUrl, $this->userName, $this->apiKey,
-                    json_encode(array('name' => $name, 'image' => ''))
-                );
-            }
-        }
-        unset($existingManufacturers);
-
-        $manufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
-        foreach ($manufacturersData as $key => $name) {
-            foreach ($manufacturers as $manufacturer) {
-                if ($name == $manufacturer->name){
-                    $manufacturersData[$key] = $manufacturer->id;
-                    break;
-                }
-            }
-        }
-        unset($manufacturers);
-
-
-        $categoriesTrees = json_decode(file_get_contents($this->categoriesTreesFilePath), true);
-        $productCategories = [];
-        foreach ($categoriesData as $categoryData) {
-            $categoryTree = explode('=>', $categoryData['products_category_tree']);
-            $categoryTree = array_map('trim', $categoryTree);
-            $categoryTree = implode(' => ', $categoryTree);
-
-            $categoryId = array_search($categoryTree, $categoriesTrees);
-            if ($categoryId !== false) {
-                $productCategories[$categoryData['external_id']][]['id'] = $categoryId;
-            }
-        }
-        unset($categoriesTrees);
-        unset($categoriesData);
+        unset($updatedCategoriesData);
 
 
         $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
         $productsCount = count($productsData);
         $createdProductsCount = 0;
-        foreach($productsData as $productNumber => $product) {
-            if (!isset($productCategories[$productNumber])) {
-                echo 'Product with external ID = ' . $productNumber . " has wrong category\n";
-                continue;
-            }
-            if (!isset($manufacturersData[$productNumber])) {
-                echo 'Product with external ID = ' . $productNumber . " has wrong manufacturer\n";
+        foreach($productsData as $product) {
+            if (!isset($product['categories'])) {
+                echo 'Product with external ID = ' . $product['external_id'] . " has no category\n";
                 continue;
             }
 
             if ($product['products_image_1']){
-                if ($product['products_image_1'] == 'https://www.dataparts.eu/media/images/org/noimage.gif'
-                    || !@getimagesize($product['products_image_1'])){
+                if ($product['products_image_1'] === 'https://www.dataparts.eu/media/images/org/noimage.gif' || !@getimagesize($product['products_image_1'])){
                     $product['products_image_1'] = null;
                 }
             }
@@ -205,10 +124,10 @@ class CreateProductsService
             );
 
             $ebayPrice = null;
-            if (isset($ebayPrices[$productNumber])) {
+            if (isset($ebayPrices[$product['external_id']])) {
                 $ebayPrice['customerGroupKey'] = 'Ebay';
-                $ebayPrice['pseudoprice'] = $ebayPrices[$productNumber]['pseudoprice'];
-                $ebayPrice['percent'] = $ebayPrices[$productNumber]['percent'];
+                $ebayPrice['pseudoprice'] = $ebayPrices[$product['external_id']]['pseudoprice'];
+                $ebayPrice['percent'] = $ebayPrices[$product['external_id']]['percent'];
 
                 $prices[] = $ebayPrice;
             }
@@ -217,13 +136,13 @@ class CreateProductsService
                 'name' => $product['products_name'],
                 'taxId' => $product['products_tax_class_id'],
                 'tax' => $product['products_tax_percent'],
-                'supplierId' => $manufacturersData[$productNumber],
+                'supplierId' => $product['cat_manufacturer'],
                 'descriptionLong' => $product['products_description'] . ProductSubscriber::MANUFACTURER_DESCRIPTION,
                 'active' => true,
                 'notification' => true,
-                'categories' => $productCategories[$productNumber],
+                'categories' => $product['categories'],
                 'mainDetail' => array(
-                    'number' => $productNumber,
+                    'number' => $product['external_id'],
                     'inStock' => $product['stock_count'],
                     'weight' => $product['products_weight'],
                     'active' => true,
@@ -239,13 +158,13 @@ class CreateProductsService
             );
 
             if (!json_decode($response)) {
-                echo 'Product with external ID = ' . $productNumber . '; Name = ' . $product['products_name'] . '; Tax ID = ' . $product['products_tax_class_id'] . " was not created\n";
+                echo 'Product with external ID = ' . $product['external_id'] . " was not created\n";
             } else {
                 if ($ebayPrice) {
                     Shopware()->Db()->query("UPDATE s_articles_prices SET price = "
-                        . $ebayPrices[$productNumber]['price']
+                        . $ebayPrices[$product['external_id']]['price']
                         . " WHERE pricegroup = 'Ebay' AND articleID = (SELECT articleID FROM s_articles_details WHERE ordernumber = '"
-                        . $productNumber . "')");
+                        . $product['external_id'] . "')");
                 }
             }
 

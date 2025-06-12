@@ -7,16 +7,19 @@ class CreateCategoriesService
 // Local
     private $categoryDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/CategoryData.csv';
     private $updatedCategoryDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedCategoryData.txt';
+    private $updatedManufacturerDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedManufactureData.txt';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
 //    private $categoryDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/CategoryData.csv';
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedCategoryData.txt';
+//    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
 //    private $categoryDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/CategoryData.csv';
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedCategoryData.txt';
+//    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $categoryName = 'Quad/Scooter spare parts';
     private $userName = 'schwab';
@@ -73,6 +76,12 @@ class CreateCategoriesService
             return strcmp($a['categories_name'], $b['categories_name']);
         });
 
+
+        $existingManufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
+        $categoriesCount = count($categoriesData);
+        $createdCategoriesCount = 0;
+        $updatedCategoriesData = [];
+        $updatedManufacturersData = [];
         foreach ($categoriesData as &$categoryData) {
             if ($categoryData['categories_level'] === '1' && $categoryData['parent_id'] === '0') {
                 $response = $this->helper->createCategory($this->endpointUrl, $this->userName, $this->apiKey,
@@ -82,8 +91,26 @@ class CreateCategoriesService
                 $newCategoryId = json_decode($response)->data->id;
                 if ($newCategoryId) {
                     $categoryData['categories_db_id'] = $newCategoryId;
-                    $categoryData['categories_level'] = null;
-                    $categoryData['parent_id'] = null;
+                    $updatedCategoriesData[$categoryData['categories_id']] = $newCategoryId;
+                }
+
+                $manufacturerId = 0;
+                foreach ($existingManufacturers as $manufacturer){
+                    if ($categoryData['categories_name'] == $manufacturer->name){
+                        $manufacturerId = $manufacturer->id;
+                        $updatedManufacturersData[$categoryData['categories_name']] = $manufacturerId;
+                        break;
+                    }
+                }
+
+                if ($manufacturerId === 0) {
+                    $response = $this->helper->createManufacturer($this->endpointUrl, $this->userName, $this->apiKey,
+                        json_encode(array('name' => $categoryData['categories_name'], 'image' => ''))
+                    );
+                    $manufacturerId = json_decode($response)->data->id;
+                    if ($manufacturerId) {
+                        $updatedManufacturersData[$categoryData['categories_name']] = $manufacturerId;
+                    }
                 }
             } else {
                 foreach ($categoriesData as $categoryDataParent) {
@@ -95,16 +122,23 @@ class CreateCategoriesService
                         $newCategoryId = json_decode($response)->data->id;
                         if ($newCategoryId) {
                             $categoryData['categories_db_id'] = $newCategoryId;
-                            $categoryData['categories_level'] = null;
-                            $categoryData['parent_id'] = null;
+                            $updatedCategoriesData[$categoryData['categories_id']] = $newCategoryId;
                         }
                         break;
                     }
                 }
             }
-        }
 
-        file_put_contents($this->updatedCategoryDataFilePath, json_encode($categoriesData));
+            $createdCategoriesCount++;
+            if ($createdCategoriesCount % 500 == 0) {
+                echo 'Created ' . $createdCategoriesCount . ' categories. ' . ($categoriesCount - $createdCategoriesCount) . " left\n";
+            }
+        }
+        unset($categoryData);
+        unset($existingManufacturers);
+
+        file_put_contents($this->updatedCategoryDataFilePath, json_encode($updatedCategoriesData));
+        file_put_contents($this->updatedManufacturerDataFilePath, json_encode($updatedManufacturersData));
 
         $executionTime = (microtime(true) - $startTime);
         echo 'Creating categories completed in ' . $executionTime . " seconds\n";
