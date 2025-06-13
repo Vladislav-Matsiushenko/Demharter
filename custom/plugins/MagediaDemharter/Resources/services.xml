@@ -36,11 +36,11 @@
             <argument type="service" id="magedia_demharter.create_products_service"/>
         </service>
 
-        <service id="magedia_demharter.create_tech_parts_service" class="MagediaDemharter\Service\CreateTechPartsService">
+        <service id="magedia_demharter.create_hotspots_service" class="MagediaDemharter\Service\CreateHotspotsService">
         </service>
-        <service id="magedia_demharter.commands.create_tech_parts_command" class="MagediaDemharter\Commands\CreateTechPartsCommand">
-            <tag name="console.command" command="demharter:create_tech_parts"/>
-            <argument type="service" id="magedia_demharter.create_tech_parts_service"/>
+        <service id="magedia_demharter.commands.create_hotspots_command" class="MagediaDemharter\Commands\CreateHotspotsCommand">
+            <tag name="console.command" command="demharter:create_hotspots"/>
+            <argument type="service" id="magedia_demharter.create_hotspots_service"/>
         </service>
 
         <service id="magedia_demharter.update_products_quantity_service" class="MagediaDemharter\Service\UpdateProductsQuantityService">

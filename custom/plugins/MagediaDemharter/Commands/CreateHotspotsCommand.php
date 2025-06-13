@@ -5,28 +5,28 @@ namespace MagediaDemharter\Commands;
 use Shopware\Commands\ShopwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use MagediaDemharter\Service\CreateTechPartsService;
+use MagediaDemharter\Service\CreateHotspotsService;
 
-class CreateTechPartsCommand extends ShopwareCommand
+class CreateHotspotsCommand extends ShopwareCommand
 {
     private $createTechPartsService;
 
-    public function __construct(CreateTechPartsService $createTechPartsService)
+    public function __construct(CreateHotspotsService $createHotspotsService)
     {
         parent::__construct();
-        $this->createTechPartsService = $createTechPartsService;
+        $this->createHotspotsService = $createHotspotsService;
     }
 
     protected function configure()
     {
         $this
-            ->setName('demharter:create_tech_parts')
-            ->setDescription('Create Tech Parts (Demharter)');
+            ->setName('demharter:create_hotspots')
+            ->setDescription('Create Hotspots (Demharter)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->createTechPartsService->execute();
+        $this->createHotspotsService->execute();
         $output->writeln("\nSuccess");
     }
 }

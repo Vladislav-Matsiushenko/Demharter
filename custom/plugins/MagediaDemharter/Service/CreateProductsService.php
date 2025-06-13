@@ -10,6 +10,7 @@ class CreateProductsService
     private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/EbayPrices.txt';
     private $productDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductData.csv';
     private $hotspotDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/HotspotData.csv';
+    private $updatedProductDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedProductData.txt';
     private $updatedCategoryDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedCategoryData.txt';
     private $updatedManufacturerDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedManufactureData.txt';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
@@ -18,6 +19,7 @@ class CreateProductsService
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/EbayPrices.txt';
 //    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductData.csv';
 //    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/HotspotData.csv';
+//    private $updatedProductDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedProductData.txt';
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedCategoryData.txt';
 //    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
@@ -26,6 +28,7 @@ class CreateProductsService
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/files/demharter/EbayPrices.txt';
 //    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductData.csv';
 //    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/HotspotData.csv';
+//    private $updatedProductDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedProductData.txt';
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedCategoryData.txt';
 //    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
@@ -50,6 +53,7 @@ class CreateProductsService
         $this->productSubscriber->setIsActive(false);
 
         $updatedManufacturersData = json_decode(file_get_contents($this->updatedManufacturerDataFilePath), true);
+        $updatedProductsData = [];
         $productsData = [];
         $csvFile = fopen($this->productDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
@@ -83,9 +87,14 @@ class CreateProductsService
                 'VK_brutto' => $rowData['VK_brutto'],
                 'stock_count' => $rowData['stock_count'],
             );
+
+            $updatedProductsData[$rowData['products_id']] = $rowData['external_id'];
         }
         fclose($csvFile);
         unset($updatedManufacturersData);
+
+        file_put_contents($this->updatedProductDataFilePath, json_encode($updatedProductsData));
+        unset($updatedProductsData);
 
 
         $updatedCategoriesData = json_decode(file_get_contents($this->updatedCategoryDataFilePath), true);
