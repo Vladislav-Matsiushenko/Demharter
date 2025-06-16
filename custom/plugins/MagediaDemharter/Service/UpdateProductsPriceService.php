@@ -26,14 +26,14 @@ class UpdateProductsPriceService
 //        '/usr/home/mipzhm/public_html/files/demharter/RdstrDlrEuropeEUROAllXLS.csv',
 //        '/usr/home/mipzhm/public_html/files/demharter/SSVDlrEuropeEUROAllXLS.csv',
 //    ];
+    private $helper;
     private $modelManager;
-    private $dbalConnection;
 
     public function __construct()
     {
+        $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
-        $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
     }
 
     public function execute()
@@ -49,15 +49,10 @@ class UpdateProductsPriceService
                 $rowData = array_combine($headers, $row);
                 $productNumber = 'B-' . $rowData[$headers[0]];
                 if (strlen($productNumber) < 4) {
-                    echo 'Product with external ID = ' . $productNumber . " does not exist\n";
                     continue;
                 }
 
-                for ($i = 0; $i < strlen($productNumber); $i++) {
-                    if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $productNumber[$i])) {
-                        $productNumber = '_';
-                    }
-                }
+                $productNumber = $this->helper->fixExternalId($productNumber);
 
                 if (isset($productNumbers[$productNumber])) {
                     continue;

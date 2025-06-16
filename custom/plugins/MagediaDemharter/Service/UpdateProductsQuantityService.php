@@ -5,52 +5,37 @@ namespace MagediaDemharter\Service;
 class UpdateProductsQuantityService
 {
 // Local
-    private $productsDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductsData.csv';
+    private $productDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductData.csv';
 
 // Staging
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductsData.csv';
+//    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductData.csv';
 
 // Live
-//    private $productsDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductsData.csv';
+//    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductData.csv';
+    private $helper;
     private $modelManager;
-    private $dbalConnection;
 
     public function __construct()
     {
+        $this->helper = Shopware()->Container()->get('magedia_demharter.helper');
         ini_set('memory_limit', '-1');
         $this->modelManager = Shopware()->Container()->get('models');
-        $this->dbalConnection = Shopware()->Container()->get('dbal_connection');
     }
 
     public function execute()
     {
         $startTime = microtime(true);
 
-        $csvFile = fopen($this->productsDataCsvFilePath, 'r');
+        $csvFile = fopen($this->productDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
-            if (!$rowData['products_name']) {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no name\n";
-                continue;
-            }
-
-            if ($rowData['products_category_tree'] == '' || $rowData['products_category_tree'] == "Artikel noch nicht zugewiesen") {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no category\n";
-                continue;
-            }
 
             if (strlen($rowData['external_id']) < 4) {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no external ID\n";
                 continue;
             }
 
-            for ($i = 0; $i < strlen($rowData['external_id']); $i++) {
-                if (!preg_match('/^[a-zA-Z0-9-_.]+$/', $rowData['external_id'][$i])){
-                    $rowData['external_id'][$i] = '_';
-                }
-            }
-
+            $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
             $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
             if (!$productDetails) {
                 echo 'Product with ID = ' . $rowData['products_id'] . " does not exist\n";
