@@ -32,8 +32,13 @@ class DeleteProductsService
     {
         $startTime = microtime(true);
 
+        if (file_exists($this->ebayPricesFilePath)) {
+            $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
+        } else {
+            $ebayPrices = [];
+        }
+
         $orderNumbers = [];
-        $ebayPrices = [];
         $csvFile = fopen($this->productDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
@@ -42,7 +47,7 @@ class DeleteProductsService
                 echo 'Product with ID = ' . $rowData['products_id'] . ' and External ID = ' . $rowData['external_id'] . " was not deleted!\n";
                 continue;
             }
-            $orderNumbers[] = $rowData['external_id'];
+            $orderNumbers[] = $this->helper->fixExternalId($rowData['external_id']);
 
             $result = Shopware()->Db()->query("SELECT * FROM s_articles_prices WHERE pricegroup = 'Ebay' AND articleID = 
                 (SELECT articleID FROM s_articles_details WHERE ordernumber = '" . $rowData['external_id'] . "')");
@@ -57,6 +62,7 @@ class DeleteProductsService
         fclose($csvFile);
 
         file_put_contents($this->ebayPricesFilePath, json_encode($ebayPrices));
+        unset($ebayPrices);
 
         $productIds = [];
         $productIdsForHotspots =[];
