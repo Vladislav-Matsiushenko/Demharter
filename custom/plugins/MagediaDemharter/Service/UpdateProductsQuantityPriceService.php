@@ -2,7 +2,7 @@
 
 namespace MagediaDemharter\Service;
 
-class UpdateProductsQuantityService
+class UpdateProductsQuantityPriceService
 {
 // Local
     private $productDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductData.csv';
@@ -42,6 +42,11 @@ class UpdateProductsQuantityService
                 continue;
             }
 
+            if ($rowData['VK_netto'] !== '') {
+                $productDetails->setPurchasePrice($rowData['VK_netto']);
+                Shopware()->Db()->query("UPDATE s_articles_prices SET price = " . $rowData['VK_netto'] . " WHERE articleID = " . $productDetails->getArticleId() . " AND pricegroup = 'EK';");
+            }
+
             $productDetails->setInStock($rowData['stock_count']);
             $this->modelManager->persist($productDetails);
         }
@@ -50,6 +55,6 @@ class UpdateProductsQuantityService
         $this->modelManager->flush();
 
         $executionTime = (microtime(true) - $startTime);
-        echo 'Updating products quantity completed in ' . $executionTime . " seconds\n";
+        echo 'Updating products quantity and price completed in ' . $executionTime . " seconds\n";
     }
 }
