@@ -64,7 +64,7 @@ class CreateProductsService
                 continue;
             }
 
-            if (!isset($updatedManufacturersData[$rowData['cat_manufacturer']])) {
+            if (!isset($updatedManufacturersData[trim($rowData['cat_manufacturer'])])) {
                 echo 'Product with ID = ' . $rowData['products_id'] . " has no manufacturer\n";
                 continue;
             }
@@ -83,7 +83,7 @@ class CreateProductsService
                 'products_tax_percent' => $rowData['products_tax_percent'],
                 'products_name' => $rowData['products_name'],
                 'products_description' => $rowData['products_description'],
-                'cat_manufacturer' => $updatedManufacturersData[$rowData['cat_manufacturer']],
+                'cat_manufacturer' => $updatedManufacturersData[trim($rowData['cat_manufacturer'])],
                 'VK_brutto' => $rowData['VK_brutto'],
                 'stock_count' => $rowData['stock_count'],
             );

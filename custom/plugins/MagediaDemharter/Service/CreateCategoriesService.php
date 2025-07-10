@@ -62,7 +62,7 @@ class CreateCategoriesService
                 'categories_id' => $rowData['categories_id'],
                 'categories_level' => $rowData['categories_level'],
                 'parent_id' => $rowData['parent_id'],
-                'categories_name' => $rowData['categories_name'],
+                'categories_name' => trim($rowData['categories_name']),
             ];
         }
         fclose($csvFile);
