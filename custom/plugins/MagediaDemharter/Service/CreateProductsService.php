@@ -32,6 +32,7 @@ class CreateProductsService
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedCategoryData.txt';
 //    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
+    private $manufacturerName = 'Default manufacturer';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;
@@ -59,14 +60,19 @@ class CreateProductsService
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
-            if ($rowData['products_id'] === '' || strlen($rowData['external_id']) < 4 || $rowData['products_name'] === '' || $rowData['cat_manufacturer'] === '') {
+            if ($rowData['products_id'] === '' || strlen($rowData['external_id']) < 4 || $rowData['products_name'] === '') {
                 echo 'Product with ID = ' . $rowData['products_id'] . " was not created\n";
                 continue;
             }
 
-            if (!isset($updatedManufacturersData[trim($rowData['cat_manufacturer'])])) {
-                echo 'Product with ID = ' . $rowData['products_id'] . " has no manufacturer\n";
-                continue;
+            if (trim($rowData['cat_manufacturer']) === '') {
+                $manufacturer = $updatedManufacturersData[$this->manufacturerName];
+            } else {
+                if (!isset($updatedManufacturersData[trim($rowData['cat_manufacturer'])])) {
+                    echo 'Product with ID = ' . $rowData['products_id'] . " has no manufacturer\n";
+                    continue;
+                }
+                $manufacturer = $updatedManufacturersData[trim($rowData['cat_manufacturer'])];
             }
 
             $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
@@ -83,7 +89,7 @@ class CreateProductsService
                 'products_tax_percent' => $rowData['products_tax_percent'],
                 'products_name' => $rowData['products_name'],
                 'products_description' => $rowData['products_description'],
-                'cat_manufacturer' => $updatedManufacturersData[trim($rowData['cat_manufacturer'])],
+                'cat_manufacturer' => $manufacturer,
                 'VK_brutto' => $rowData['VK_brutto'],
                 'stock_count' => $rowData['stock_count'],
             );

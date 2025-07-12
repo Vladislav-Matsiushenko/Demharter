@@ -22,6 +22,7 @@ class CreateCategoriesService
 //    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
     private $categoryName = 'Quad/Scooter spare parts';
+    private $manufacturerName = 'Default manufacturer';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;
@@ -78,10 +79,18 @@ class CreateCategoriesService
 
 
         $existingManufacturers = $this->helper->getManufacturers($this->endpointUrl, $this->userName, $this->apiKey);
+
+        $updatedManufacturersData = [];
+        foreach ($existingManufacturers as $manufacturer){
+            if ($this->manufacturerName == $manufacturer->name){
+                $updatedManufacturersData[$this->manufacturerName] = $manufacturer->id;
+                break;
+            }
+        }
+
         $categoriesCount = count($categoriesData);
         $createdCategoriesCount = 0;
         $updatedCategoriesData = [];
-        $updatedManufacturersData = [];
         foreach ($categoriesData as &$categoryData) {
             if ($categoryData['categories_level'] === '1' && $categoryData['parent_id'] === '0') {
                 $response = $this->helper->createCategory($this->endpointUrl, $this->userName, $this->apiKey,
