@@ -21,7 +21,7 @@ class CreateCategoriesService
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedCategoryData.txt';
 //    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
-    private $categoryName = 'Quad/Scooter spare parts';
+    private $categoryName = 'Ersatzteile';
     private $manufacturerName = 'Default manufacturer';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
