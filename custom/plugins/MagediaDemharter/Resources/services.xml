@@ -68,5 +68,20 @@
             <tag name="shopware.event_subscriber" />
             <argument type="service" id="models" />
         </service>
+
+
+        <service id="magedia_demharter.delete_yamaha_products_service" class="MagediaDemharter\Service\DeleteYamahaProductsService">
+        </service>
+        <service id="magedia_demharter.commands.delete_yamaha_products_command" class="MagediaDemharter\Commands\DeleteYamahaProductsCommand">
+            <tag name="console.command" command="demharter:delete_yamaha_products"/>
+            <argument type="service" id="magedia_demharter.delete_yamaha_products_service"/>
+        </service>
+
+        <service id="magedia_demharter.delete_old_products_service" class="MagediaDemharter\Service\DeleteOldProductsService">
+        </service>
+        <service id="magedia_demharter.commands.delete_old_products_command" class="MagediaDemharter\Commands\DeleteOldProductsCommand">
+            <tag name="console.command" command="demharter:delete_old_products"/>
+            <argument type="service" id="magedia_demharter.delete_old_products_service"/>
+        </service>
     </services>
 </container>

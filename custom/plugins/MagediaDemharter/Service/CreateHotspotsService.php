@@ -115,19 +115,26 @@ class CreateHotspotsService
                 $categoryId = $updatedCategoriesData[$rowData['categories_id']];
                 $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $updatedProductData[$rowData['products_id']]]);
                 if ($productDetails) {
-                    Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
-                        . $categoryId . ", '"
-                        . $rowData['position_x'] . ';' . $rowData['position_y'] . "')");
-
                     $hotspotId = 0;
                     $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $categoryId
                         . " AND coords = '" . $rowData['position_x'] . ';' . $rowData['position_y'] . "'");
                     foreach ($result as $row) {
                         $hotspotId = $row['id'];
                     }
+                    if ($hotspotId === 0) {
+                        Shopware()->Db()->query("INSERT INTO pk_explosion_chart_hotspots (categoryID, coords) VALUES("
+                            . $categoryId . ", '"
+                            . $rowData['position_x'] . ';' . $rowData['position_y'] . "')");
+
+                        $result = Shopware()->Db()->query("SELECT * FROM pk_explosion_chart_hotspots WHERE categoryID = " . $categoryId
+                            . " AND coords = '" . $rowData['position_x'] . ';' . $rowData['position_y'] . "'");
+                        foreach ($result as $row) {
+                            $hotspotId = $row['id'];
+                        }
+                    }
 
                     if ($hotspotId !== 0) {
-                        $hotspotsInsertData[$hotspotId] = "("
+                        $hotspotsInsertData[] = "("
                             . $hotspotId . ", "
                             . $productDetails->getArticleID() . ", "
                             . $productDetails->getId() . ", 1)";
