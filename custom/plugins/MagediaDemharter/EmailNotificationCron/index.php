@@ -21,7 +21,7 @@ try {
 
 $sql = "
 UPDATE s_articles a
-    JOIN s_articles_supplier s ON a.supplierID = s.id
+JOIN s_articles_supplier s ON a.supplierID = s.id
 SET a.notification = 0
 WHERE s.name = 'CAN-AM';
 ";
@@ -37,21 +37,24 @@ $categoryName = "Bekleidung";
 setNotification($pdo, $categoryName);
 
 $categoryName = "Ersatzteile";
-setNotification($pdo, $categoryName);
+$parentId = setNotification($pdo, $categoryName);
+
+$categoryName = "Can Am Ersatzteile";
+setNotification($pdo, $categoryName, $parentId, 0);
 
 
-function setNotification($pdo, $categoryName)
+function setNotification($pdo, $categoryName, $parentId = 3, $value = 1)
 {
-    $sql = "SELECT id FROM s_categories WHERE description = :description AND parent = 3";
+    $sql = "SELECT id FROM s_categories WHERE description = :description AND parent = :parent";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute(['description' => $categoryName]);
+    $stmt->execute(['description' => $categoryName, 'parent' => $parentId]);
     $categoryId = (int)$stmt->fetch()["id"];
 
     $sql = "
     UPDATE s_articles a
     JOIN s_articles_details ad ON a.id = ad.articleID
     JOIN s_articles_categories ac ON a.id = ac.articleID
-    SET a.notification = 1, a.laststock = 1, ad.laststock = 1
+    SET a.notification = :value1, a.laststock = :value2, ad.laststock = :value3
     WHERE ac.categoryID IN (
         SELECT id FROM (
         WITH RECURSIVE category_tree AS (
@@ -65,6 +68,8 @@ function setNotification($pdo, $categoryName)
     );
     ";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute(['id' => $categoryId]);
+    $stmt->execute(['id' => $categoryId, 'value1' => $value, 'value2' => $value, 'value3' => $value]);
     echo "Updated $categoryName products.\n";
+
+    return $categoryId;
 }
