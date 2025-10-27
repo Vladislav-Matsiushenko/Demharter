@@ -24,7 +24,7 @@ class CreateHotspotsService
 //    private $updatedProductDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedProductData.txt';
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedCategoryData.txt';
 //    private $imagesFilePath = '/usr/home/mipzhm/public_html/media/image/pkExplosionChart/';
-    private $categoryName = 'Ersatzteile';
+    private $categoryName = 'Ersatzteile Roller/Quad';
     private $imageUrl = 'https://www.dataparts.eu/media/images/org/';
     private $helper;
     private $modelManager;

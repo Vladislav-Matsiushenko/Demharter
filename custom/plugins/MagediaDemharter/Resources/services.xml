@@ -50,13 +50,6 @@
             <argument type="service" id="magedia_demharter.update_products_quantity_price_service"/>
         </service>
 
-        <service id="magedia_demharter.update_products_price_service" class="MagediaDemharter\Service\UpdateProductsPriceService">
-        </service>
-        <service id="magedia_demharter.commands.update_products_price_command" class="MagediaDemharter\Commands\UpdateProductsPriceCommand">
-            <tag name="console.command" command="demharter:update_products_price"/>
-            <argument type="service" id="magedia_demharter.update_products_price_service"/>
-        </service>
-
         <service id="magedia_demharter.delete_hotspots_products_categories_service" class="MagediaDemharter\Service\DeleteHotspotsProductsCategoriesService">
         </service>
         <service id="magedia_demharter.commands.delete_hotspots_products_categories_command" class="MagediaDemharter\Commands\DeleteHotspotsProductsCategoriesCommand">
@@ -67,21 +60,6 @@
         <service id="magedia_demharter.subscriber.product_subscriber" class="MagediaDemharter\Subscriber\ProductSubscriber">
             <tag name="shopware.event_subscriber" />
             <argument type="service" id="models" />
-        </service>
-
-
-        <service id="magedia_demharter.delete_yamaha_products_service" class="MagediaDemharter\Service\DeleteYamahaProductsService">
-        </service>
-        <service id="magedia_demharter.commands.delete_yamaha_products_command" class="MagediaDemharter\Commands\DeleteYamahaProductsCommand">
-            <tag name="console.command" command="demharter:delete_yamaha_products"/>
-            <argument type="service" id="magedia_demharter.delete_yamaha_products_service"/>
-        </service>
-
-        <service id="magedia_demharter.delete_old_products_service" class="MagediaDemharter\Service\DeleteOldProductsService">
-        </service>
-        <service id="magedia_demharter.commands.delete_old_products_command" class="MagediaDemharter\Commands\DeleteOldProductsCommand">
-            <tag name="console.command" command="demharter:delete_old_products"/>
-            <argument type="service" id="magedia_demharter.delete_old_products_service"/>
         </service>
     </services>
 </container>

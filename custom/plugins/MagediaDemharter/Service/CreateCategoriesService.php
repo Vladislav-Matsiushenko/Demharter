@@ -21,7 +21,7 @@ class CreateCategoriesService
 //    private $updatedCategoryDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedCategoryData.txt';
 //    private $updatedManufacturerDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedManufactureData.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
-    private $categoryName = 'Ersatzteile';
+    private $categoryName = 'Ersatzteile Roller/Quad';
     private $manufacturerName = 'Default manufacturer';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
@@ -93,15 +93,25 @@ class CreateCategoriesService
         $updatedCategoriesData = [];
         foreach ($categoriesData as &$categoryData) {
             if ($categoryData['categories_level'] === '1' && $categoryData['parent_id'] === '0') {
-                $response = $this->helper->createCategory($this->endpointUrl, $this->userName, $this->apiKey,
-                    json_encode(array('name' => $categoryData['categories_name'], 'parentId' => $parentCategoryId))
-                );
 
-                $newCategoryId = json_decode($response)->data->id;
-                if ($newCategoryId) {
-                    $categoryData['categories_db_id'] = $newCategoryId;
-                    $updatedCategoriesData[$categoryData['categories_id']] = $newCategoryId;
+                $currentCategoryId = 0;
+                $result = Shopware()->Db()->query('SELECT id FROM s_categories WHERE description = :description AND parent = :parent', [
+                    'description' => $categoryData['categories_name'],
+                    'parent' => $parentCategoryId,
+                ]);
+                foreach ($result as $row) {
+                    $currentCategoryId = $row['id'];
                 }
+                if ($currentCategoryId === 0) {
+                    $response = $this->helper->createCategory($this->endpointUrl, $this->userName, $this->apiKey,
+                        json_encode(array('name' => $categoryData['categories_name'], 'parentId' => $parentCategoryId))
+                    );
+                    $currentCategoryId = json_decode($response)->data->id;
+                }
+
+                $categoryData['categories_db_id'] = $currentCategoryId;
+                $updatedCategoriesData[$categoryData['categories_id']] = $currentCategoryId;
+
 
                 $manufacturerId = 0;
                 foreach ($existingManufacturers as $manufacturer){
@@ -124,15 +134,25 @@ class CreateCategoriesService
             } else {
                 foreach ($categoriesData as $categoryDataParent) {
                     if ($categoryData['parent_id'] === $categoryDataParent['categories_id']) {
-                        $response = $this->helper->createCategory($this->endpointUrl, $this->userName, $this->apiKey,
-                            json_encode(array('name' => $categoryData['categories_name'], 'parentId' => $categoryDataParent['categories_db_id']))
-                        );
 
-                        $newCategoryId = json_decode($response)->data->id;
-                        if ($newCategoryId) {
-                            $categoryData['categories_db_id'] = $newCategoryId;
-                            $updatedCategoriesData[$categoryData['categories_id']] = $newCategoryId;
+                        $currentCategoryId = 0;
+                        $result = Shopware()->Db()->query('SELECT id FROM s_categories WHERE description = :description AND parent = :parent', [
+                            'description' => $categoryData['categories_name'],
+                            'parent' => $categoryDataParent['categories_db_id'],
+                        ]);
+                        foreach ($result as $row) {
+                            $currentCategoryId = $row['id'];
                         }
+                        if ($currentCategoryId === 0) {
+                            $response = $this->helper->createCategory($this->endpointUrl, $this->userName, $this->apiKey,
+                                json_encode(array('name' => $categoryData['categories_name'], 'parentId' => $categoryDataParent['categories_db_id']))
+                            );
+                            $currentCategoryId = json_decode($response)->data->id;
+                        }
+
+                        $categoryData['categories_db_id'] = $currentCategoryId;
+                        $updatedCategoriesData[$categoryData['categories_id']] = $currentCategoryId;
+
                         break;
                     }
                 }
