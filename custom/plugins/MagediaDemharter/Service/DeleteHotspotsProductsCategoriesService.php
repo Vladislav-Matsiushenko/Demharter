@@ -15,7 +15,7 @@ class DeleteHotspotsProductsCategoriesService
 // Live
 //    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/files/demharter/EbayPrices.txt';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
-    private $categoryName = 'Ersatzteile';
+    private $categoryName = 'BETA';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;

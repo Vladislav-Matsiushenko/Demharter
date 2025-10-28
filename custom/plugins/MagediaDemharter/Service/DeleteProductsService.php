@@ -5,19 +5,18 @@ namespace MagediaDemharter\Service;
 class DeleteProductsService
 {
 // Local
-    private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/EbayPrices.txt';
     private $productDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductData.csv';
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
-//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/EbayPrices.txt';
 //    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductData.csv';
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
-//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/files/demharter/EbayPrices.txt';
 //    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductData.csv';
 //    private $endpointUrl = 'https://www.quad-ersatzteile.com/api';
+    private $categoryName = 'Ersatzteile Roller/Quad';
+    private $excludedCategoryName = 'Can Am Ersatzteile';
     private $userName = 'schwab';
     private $apiKey = 'pdw4kVus56U9IcFaKuHKv7QFQABtKeG20ub5rAh3';
     private $helper;
@@ -32,60 +31,61 @@ class DeleteProductsService
     {
         $startTime = microtime(true);
 
-        if (file_exists($this->ebayPricesFilePath)) {
-            $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
-        } else {
-            $ebayPrices = [];
-        }
-
         $orderNumbers = [];
         $csvFile = fopen($this->productDataCsvFilePath, 'r');
         $headers = fgetcsv($csvFile, 0, ';');
         while ($row = fgetcsv($csvFile, 0, ';')) {
             $rowData = array_combine($headers, $row);
             if (strlen($rowData['external_id']) < 4) {
-                echo 'Product with ID = ' . $rowData['products_id'] . ' and External ID = ' . $rowData['external_id'] . " was not deleted!\n";
                 continue;
             }
             $orderNumbers[] = $this->helper->fixExternalId($rowData['external_id']);
-
-            $result = Shopware()->Db()->query("SELECT * FROM s_articles_prices WHERE pricegroup = 'Ebay' AND articleID = 
-                (SELECT articleID FROM s_articles_details WHERE ordernumber = '" . $rowData['external_id'] . "')");
-            foreach ($result as $rowEbayPrice) {
-                $ebayPrices[$rowData['external_id']] = [
-                    'price' => $rowEbayPrice['price'],
-                    'pseudoprice' => $rowEbayPrice['pseudoprice'],
-                    'percent' => $rowEbayPrice['percent']
-                ];
-            }
         }
         fclose($csvFile);
 
-        file_put_contents($this->ebayPricesFilePath, json_encode($ebayPrices));
-        unset($ebayPrices);
-
-        $productIds = [];
-        $productIdsForHotspots =[];
+        $csvProductIds = [];
         $result = Shopware()->Db()->query("SELECT articleID FROM s_articles_details WHERE ordernumber IN ('" . implode("','", $orderNumbers) . "')");
         foreach ($result as $row) {
-            $productIds[] = array('id' => $row['articleID']);
-            $productIdsForHotspots[] = $row['articleID'];
+            $csvProductIds[] = $row['articleID'];
+        }
+        unset($orderNumbers);
 
-            if (count($productIds) >= 500) {
-                $this->helper->deleteProduct($this->endpointUrl, $this->userName, $this->apiKey,
-                    json_encode($productIds)
-                );
-                $productIds = [];
+
+        $categoryIds = $this->helper->getChildCategories($this->categoryName);
+        $excludedCategory = 0;
+        $result = Shopware()->Db()->query('SELECT * FROM s_categories WHERE description = :value', [
+            'value' => $this->excludedCategoryName
+        ]);
+        foreach ($result as $row) {
+            $excludedCategory = $row['id'];
+        }
+        $categoryIds = array_diff($categoryIds, [$excludedCategory]);
+
+        $productIdsToDelete = [];
+        $productIdsForHotspots =[];
+        $result = Shopware()->Db()->query("SELECT DISTINCT articleID FROM s_articles_categories WHERE categoryID IN ('" . implode("','", $categoryIds) . "')");
+        foreach ($result as $row) {
+            if (!in_array($row['articleID'], $csvProductIds, true)) {
+                echo 'Product with ID = ' . $row['articleID'] . " was deleted\n";
+
+                $productIdsToDelete[] = array('id' => $row['articleID']);
+                $productIdsForHotspots[] = $row['articleID'];
+
+                if (count($productIdsToDelete) >= 500) {
+                    $this->helper->deleteProduct($this->endpointUrl, $this->userName, $this->apiKey,
+                        json_encode($productIdsToDelete)
+                    );
+                    $productIdsToDelete = [];
+                }
             }
         }
 
-        if (count($productIds) > 0) {
+        if (count($productIdsToDelete) > 0) {
             $this->helper->deleteProduct($this->endpointUrl, $this->userName, $this->apiKey,
-                json_encode($productIds)
+                json_encode($productIdsToDelete)
             );
         }
 
-        Shopware()->Db()->query("DELETE FROM s_articles_details WHERE ordernumber IN ('" . implode("','", $orderNumbers) . "')");
         Shopware()->Db()->query("DELETE FROM pk_explosion_chart_articles WHERE articleID IN ('" . implode("','", $productIdsForHotspots) . "')");
 
         $executionTime = (microtime(true) - $startTime);
