@@ -73,6 +73,28 @@ class Helper
         return $response;
     }
 
+    public function updateProduct($endpointUrl, $userName, $apiKey, $data, $id)
+    {
+        return $this->updateEntity(self::PRODUCT_ENTITY, $endpointUrl, $userName, $apiKey, $data, $id);
+    }
+
+    private function updateEntity($entity, $endpointUrl, $userName, $apiKey, $data, $id)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $endpointUrl . '/' . $entity . '/' . $id);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        curl_setopt($ch, CURLOPT_USERPWD, $userName . ':' . $apiKey);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+        $response = curl_exec($ch);
+
+        curl_close($ch);
+
+        return $response;
+    }
+
     public function deleteProduct($endpointUrl, $userName, $apiKey, $data)
     {
         return $this->deleteEntity(self::PRODUCT_ENTITY, $endpointUrl, $userName, $apiKey, $data);

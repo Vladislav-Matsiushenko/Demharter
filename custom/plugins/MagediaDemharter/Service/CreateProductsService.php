@@ -53,6 +53,22 @@ class CreateProductsService
 
         $this->productSubscriber->setIsActive(false);
 
+        $productCategoriesData = [];
+
+        $updatedCategoriesData = json_decode(file_get_contents($this->updatedCategoryDataFilePath), true);
+        sort($updatedCategoriesData);
+        $csvFile = fopen($this->hotspotDataCsvFilePath, 'r');
+        $headers = fgetcsv($csvFile, 0, ';');
+        while ($row = fgetcsv($csvFile, 0, ';')) {
+            $rowData = array_combine($headers, $row);
+            if (isset($updatedCategoriesData[$rowData['categories_id']])) {
+                $productCategoriesData[$rowData['products_id']][] = $updatedCategoriesData[$rowData['categories_id']];
+            }
+        }
+        fclose($csvFile);
+        unset($updatedCategoriesData);
+
+
         $updatedManufacturersData = json_decode(file_get_contents($this->updatedManufacturerDataFilePath), true);
         $updatedProductsData = [];
         $productsData = [];
@@ -76,8 +92,87 @@ class CreateProductsService
             }
 
             $rowData['external_id'] = $this->helper->fixExternalId($rowData['external_id']);
-            if ($this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']])) {
+            $productDetails = $this->modelManager->getRepository('Shopware\Models\Article\Detail')->findOneBy(['number' => $rowData['external_id']]);
+            if ($productDetails) {
                 echo 'Product with ID = ' . $rowData['products_id'] . " already exists\n";
+
+                if ($rowData['VK_netto'] !== '') {
+                    $productDetails->setPurchasePrice($rowData['VK_netto']);
+                    Shopware()->Db()->query("UPDATE s_articles_prices SET price = " . $rowData['VK_netto'] . " WHERE articleID = " . $productDetails->getArticleId() . " AND pricegroup = 'EK';");
+                }
+
+                $productDetails->setWeight($rowData['products_weight']);
+                $productDetails->setInStock($rowData['stock_count']);
+
+                $article = $productDetails->getArticle();
+
+                if ($article->getName() !== $rowData['products_name']) {
+                    $article->setName($rowData['products_name']);
+                }
+                if ($article->getDescriptionLong() !== $rowData['products_description'] . ProductSubscriber::MANUFACTURER_DESCRIPTION) {
+                    $article->setDescriptionLong($rowData['products_description'] . ProductSubscriber::MANUFACTURER_DESCRIPTION);
+                }
+                if ($article->getSupplier()->getId() !== $manufacturer) {
+                    $supplier = $this->modelManager->getRepository('Shopware\Models\Article\Supplier')->find($manufacturer);
+                    if ($supplier) {
+                        $article->setSupplier($supplier);
+                    }
+                }
+
+
+                $validUrl = $rowData['products_image_1'] !== ''
+                    && $rowData['products_image_1'] !== 'https://www.dataparts.eu/media/images/org/noimage.gif'
+                    && @getimagesize($rowData['products_image_1']);
+
+                $image = $article->getImages()->first();
+                if ($validUrl || $image !== false) {
+                    if ($validUrl) {
+                        $imageName = pathinfo(parse_url($rowData['products_image_1'], PHP_URL_PATH), PATHINFO_FILENAME);
+                        $imageName = str_replace('.', '-', $imageName);
+                        if (stripos($image === false ? '' : $image->getPath(), $imageName) === false) {
+                            $article->getImages()->clear();
+                            $productData = array(
+                                'images' => array(
+                                    array('link' => $rowData['products_image_1'])
+                                )
+                            );
+
+                            $response = $this->helper->updateProduct($this->endpointUrl, $this->userName, $this->apiKey,
+                                json_encode($productData), $productDetails->getArticleId()
+                            );
+
+                            if (!json_decode($response)) {
+                                echo 'Product with external ID = ' . $rowData['external_id'] . " has not updated image\n";
+                            }
+                        }
+                    } else {
+                        $article->getImages()->clear();
+                    }
+                }
+
+
+                $articleCategoriesIds = [];
+                foreach ($article->getCategories() as $category) {
+                    $articleCategoriesIds[] = (string)$category->getId();
+                }
+                sort($articleCategoriesIds);
+
+                if ($articleCategoriesIds != $productCategoriesData[$rowData['products_id']]) {
+                    $article->getCategories()->clear();
+                    foreach ($productCategoriesData[$rowData['products_id']] as $categoryId) {
+                        $category = $this->modelManager->getRepository('Shopware\Models\Category\Category')->find($categoryId);
+                        if ($category) {
+                            $article->addCategory($category);
+                        }
+                    }
+                }
+
+                $this->modelManager->persist($productDetails);
+                $this->modelManager->persist($article);
+                $this->modelManager->flush();
+
+                $updatedProductsData[$rowData['products_id']] = $rowData['external_id'];
+
                 continue;
             }
 
@@ -102,6 +197,9 @@ class CreateProductsService
         file_put_contents($this->updatedProductDataFilePath, json_encode($updatedProductsData));
         unset($updatedProductsData);
 
+        unset($productCategoriesData);
+
+        echo "Update finished.\n";
 
         $updatedCategoriesData = json_decode(file_get_contents($this->updatedCategoryDataFilePath), true);
         $csvFile = fopen($this->hotspotDataCsvFilePath, 'r');
