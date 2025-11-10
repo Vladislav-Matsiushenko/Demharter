@@ -7,6 +7,7 @@ use MagediaDemharter\Subscriber\ProductSubscriber;
 class CreateProductsService
 {
 // Local
+    private $ebayPricesFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/EbayPrices.txt';
     private $productDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/ProductData.csv';
     private $hotspotDataCsvFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/HotspotData.csv';
     private $updatedProductDataFilePath = '/var/www/quad-ersatzteile.loc/files/demharter/UpdatedProductData.txt';
@@ -15,6 +16,7 @@ class CreateProductsService
     private $endpointUrl = 'http://quad-ersatzteile.loc/api';
 
 // Staging
+//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/EbayPrices.txt';
 //    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/ProductData.csv';
 //    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/HotspotData.csv';
 //    private $updatedProductDataFilePath = '/usr/home/mipzhm/public_html/staging/files/demharter/UpdatedProductData.txt';
@@ -23,6 +25,7 @@ class CreateProductsService
 //    private $endpointUrl = 'http://staging.quad-ersatzteile.com/api';
 
 // Live
+//    private $ebayPricesFilePath = '/usr/home/mipzhm/public_html/files/demharter/EbayPrices.txt';
 //    private $productDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/ProductData.csv';
 //    private $hotspotDataCsvFilePath = '/usr/home/mipzhm/public_html/files/demharter/HotspotData.csv';
 //    private $updatedProductDataFilePath = '/usr/home/mipzhm/public_html/files/demharter/UpdatedProductData.txt';
@@ -49,6 +52,12 @@ class CreateProductsService
         $startTime = microtime(true);
 
         $this->productSubscriber->setIsActive(false);
+
+        if (file_exists($this->ebayPricesFilePath)) {
+            $ebayPrices = json_decode(file_get_contents($this->ebayPricesFilePath), true);
+        } else {
+            $ebayPrices = [];
+        }
 
         $updatedManufacturersData = json_decode(file_get_contents($this->updatedManufacturerDataFilePath), true);
         $updatedProductsData = [];
@@ -101,6 +110,15 @@ class CreateProductsService
                     $this->modelManager->flush();
                     $this->modelManager->clear();
                 }
+
+                $res = Shopware()->Db()->query("SELECT * FROM s_articles_prices WHERE pricegroup = 'Ebay' AND articleID = " . $productDetails->getArticle()->getId());
+                foreach ($res as $rowEbayPrice) {
+                    $ebayPrices[$rowData['external_id']] = [
+                        'price' => $rowEbayPrice['price'],
+                        'pseudoprice' => $rowEbayPrice['pseudoprice'],
+                        'percent' => $rowEbayPrice['percent']
+                    ];
+                }
             }
 
             $updatedProductsData[$rowData['products_id']] = $rowData['external_id'];
@@ -110,6 +128,8 @@ class CreateProductsService
 
         file_put_contents($this->updatedProductDataFilePath, json_encode($updatedProductsData));
         unset($updatedProductsData);
+
+        file_put_contents($this->ebayPricesFilePath, json_encode($ebayPrices));
 
         $this->modelManager->flush();
         $this->modelManager->clear();
@@ -148,6 +168,16 @@ class CreateProductsService
                     'price' => $product['VK_brutto'],
                 )
             );
+
+            $ebayPrice = null;
+            if (isset($ebayPrices[$product['external_id']])) {
+                $ebayPrice['customerGroupKey'] = 'Ebay';
+                $ebayPrice['price'] = $ebayPrices[$product['external_id']]['price'] * 1.19;
+                $ebayPrice['pseudoprice'] = $ebayPrices[$product['external_id']]['pseudoprice'];
+                $ebayPrice['percent'] = $ebayPrices[$product['external_id']]['percent'];
+
+                $prices[] = $ebayPrice;
+            }
 
             if ($product['article_id']) {
                 $productData = array(
